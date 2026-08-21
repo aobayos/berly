@@ -1,0 +1,1877 @@
+:root {
+  --bg: #16151a;
+  --bg-panel: #1f1e25;
+  --bg-hover: #2a2933;
+  --border: #34333e;
+  --text: #d6d4de;
+  --text-dim: #8b8896;
+  --accent: #ef4e5e;
+  --accent-dark: #cf3646;
+  --danger: #e05c5c;
+  --page-bg: #fdfdfb;
+  --page-text: #1a1a1a;
+  --font-ui: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-screenplay: 'Courier Prime', 'Courier New', Courier, monospace;
+
+  /* Makes the browser's own furniture — scrollbars, form controls, the
+     canvas behind the app — follow the dark palette instead of defaulting
+     to a light one. */
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* The script page is the one light surface in the app, and it keeps a
+   scrollbar to match; everything else scrolls dark. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4a4857;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 15px;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* Chromium's default focus ring is orange and clashes with the palette.
+   Scoped to what it actually lands on — inputs draw their own focus state. */
+button:focus-visible,
+a:focus-visible,
+[role='tab']:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 13.5px;
+  transition: background 0.12s, border-color 0.12s;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  background: var(--bg-hover);
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
+}
+
+.btn-ghost {
+  background: transparent;
+}
+
+.btn-active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-small {
+  padding: 4px 10px;
+  font-size: 12.5px;
+}
+
+.btn-danger:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* ---------- Home / project list ---------- */
+
+.home {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+
+.home-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 36px;
+}
+
+.home-logo {
+  font-size: 42px;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.home-tagline {
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.home-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.create-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+
+.create-input {
+  flex: 1;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 9px 12px;
+  font-size: 15px;
+  font-family: inherit;
+}
+
+.create-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.home-empty {
+  color: var(--text-dim);
+  text-align: center;
+  padding: 80px 0;
+  font-size: 16px;
+}
+
+.project-grid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.project-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.12s;
+}
+
+.project-card:hover {
+  border-color: var(--accent);
+}
+
+.project-card-main {
+  background: none;
+  border: none;
+  color: inherit;
+  text-align: left;
+  padding: 18px 18px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+}
+
+.project-name {
+  font-size: 17px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.project-meta {
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
+.project-card-actions {
+  display: flex;
+  gap: 8px;
+  padding: 0 18px 14px;
+}
+
+/* ---------- Editor layout ---------- */
+
+.editor {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* One line, always: the toolbar sits between the tab strip and the page, and
+   a second row of it shifts the whole script down. Groups shrink and clip
+   before the bar is allowed to wrap. */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: nowrap;
+}
+
+/* Never shrink: a group that gives way doesn't get narrower, it just pushes
+   its buttons past the window edge where they can't be clicked. The type bar
+   is the only thing allowed to yield (see .type-bar). */
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  flex: none;
+  min-width: 0;
+}
+
+.toolbar-group > .btn {
+  flex: none;
+}
+
+.toolbar-project-name {
+  font-weight: 600;
+  color: #fff;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The one part of the bar allowed to give way when the window is narrow:
+   every element type is also on Ctrl+1–6, so scrolling here costs nothing,
+   whereas losing the view switcher or the save state off the right edge
+   would. */
+.type-bar {
+  display: flex;
+  gap: 2px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px;
+  flex-wrap: nowrap;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.type-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.type-btn {
+  flex: none;
+  white-space: nowrap;
+}
+
+.type-bar.is-hidden {
+  display: none;
+}
+
+.type-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  border-radius: 5px;
+  padding: 5px 9px;
+  font-size: 12.5px;
+}
+
+.type-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.type-btn.is-active {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.type-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.kind-toggle {
+  display: flex;
+  gap: 6px;
+}
+
+.badge {
+  font-size: 11px;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 4px;
+  padding: 2px 7px;
+  vertical-align: middle;
+  font-weight: 400;
+}
+
+.home-title {
+  font-size: 28px;
+  color: #fff;
+  margin-top: 10px;
+}
+
+.save-state {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  min-width: 90px;
+  text-align: right;
+}
+
+.save-state.is-saved {
+  color: #7fbf7f;
+}
+
+.editor-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+/* ---------- Sidebar (scenes / pages) ---------- */
+
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  background: var(--bg-panel);
+  overflow-y: auto;
+  padding-bottom: 14px;
+}
+
+.side-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg-panel);
+  z-index: 2;
+}
+
+.side-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-dim);
+  padding: 10px 8px;
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.side-tab.is-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.side-empty {
+  color: var(--text-dim);
+  font-size: 13px;
+  padding: 14px 16px;
+}
+
+.side-list {
+  list-style: none;
+  padding-top: 8px;
+}
+
+.side-item {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text);
+  text-align: left;
+  padding: 7px 16px;
+  font-size: 13px;
+}
+
+.side-item:hover {
+  background: var(--bg-hover);
+}
+
+.side-num {
+  color: var(--accent);
+  font-size: 11.5px;
+  min-width: 16px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.side-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.side-page {
+  display: flex;
+  flex-direction: column;
+  white-space: normal;
+}
+
+.side-snippet {
+  color: var(--text-dim);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- Bible page ---------- */
+
+.bible-page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 8px 4px 40px;
+}
+
+.bible-section {
+  margin-bottom: 36px;
+}
+
+.bible-heading {
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+}
+
+.bible-add-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.bible-add-input {
+  flex: 1;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 8px 12px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.bible-add-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.bible-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bible-item {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.bible-item-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.bible-item-name {
+  font-weight: 600;
+  color: #fff;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 14px;
+}
+
+.bible-item-link {
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+}
+
+.bible-item-link:hover {
+  text-decoration-color: var(--accent);
+}
+
+.char-meta {
+  color: var(--text-dim);
+  font-size: 11.5px;
+  flex: 1;
+}
+
+.char-bible {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.char-bible:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* ---------- Find panel ---------- */
+
+.find-panel {
+  position: absolute;
+  top: 52px;
+  right: 14px;
+  z-index: 40;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  padding: 8px;
+  width: 320px;
+  max-width: calc(100% - 28px);
+}
+
+.find-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 7px 10px;
+  font-size: 13.5px;
+  font-family: inherit;
+}
+
+.find-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.find-results {
+  list-style: none;
+  margin-top: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.find-results button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text);
+  border-radius: 5px;
+  padding: 6px 8px;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.find-results button:hover {
+  background: var(--bg-hover);
+}
+
+.find-empty {
+  color: var(--text-dim);
+  font-size: 12.5px;
+  padding: 6px 8px;
+}
+
+/* ---------- Autocomplete / type chooser menu ---------- */
+
+.el-wrap {
+  position: relative;
+}
+
+.el-menu {
+  position: absolute;
+  top: 100%;
+  z-index: 30;
+  list-style: none;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  padding: 4px;
+  min-width: 230px;
+  max-width: 320px;
+  max-height: 236px;
+  overflow-y: auto;
+  font-family: var(--font-ui);
+  font-size: 13px;
+}
+
+.el-menu button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 5px;
+  color: var(--text);
+  padding: 6px 10px;
+}
+
+.el-menu button.is-selected {
+  background: var(--accent);
+  color: #fff;
+}
+
+.menu-key {
+  color: inherit;
+  opacity: 0.55;
+  font-size: 11.5px;
+  min-width: 10px;
+}
+
+.menu-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- The screenplay page ---------- */
+
+.editor-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px 24px 60px;
+}
+
+.page {
+  position: relative;
+  background: var(--page-bg);
+  color: var(--page-text);
+  width: 8.5in;
+  max-width: 100%;
+  min-height: 11in;
+  margin: 0 auto;
+  padding: 1in 1in 1in 1.5in;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+  border-radius: 2px;
+  font-family: var(--font-screenplay);
+  font-size: 12pt;
+  line-height: 1;
+}
+
+.el {
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-height: 1em;
+  line-height: 1.1;
+  caret-color: #000;
+}
+
+.el:empty::before {
+  content: attr(data-placeholder);
+  color: #b9b4a8;
+  pointer-events: none;
+}
+
+/* Industry-standard indents, measured from the 1.5in left margin
+   (page content area is 6in wide). */
+
+.el-scene {
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-top: 22px;
+}
+
+.el-action {
+  margin-top: 12px;
+}
+
+.el-character {
+  margin-left: 2.2in;
+  margin-right: 0.5in;
+  text-transform: uppercase;
+  margin-top: 12px;
+}
+
+.el-parenthetical {
+  margin-left: 1.6in;
+  margin-right: 1.9in;
+  margin-top: 1px;
+}
+
+.el-dialogue {
+  margin-left: 1in;
+  margin-right: 1.5in;
+  margin-top: 1px;
+}
+
+.el-transition {
+  text-align: right;
+  text-transform: uppercase;
+  margin-top: 12px;
+}
+
+.page > .el-wrap:first-child .el {
+  margin-top: 0;
+}
+
+/* The page itself is a click target: anywhere blank focuses the nearest
+   element, so show a text cursor everywhere. */
+.script-page {
+  cursor: text;
+}
+
+/* The gap between sheets is what makes a page break read as a page break. */
+.script-page + .script-page {
+  margin-top: 28px;
+}
+
+/* Page numbers sit in the top margin, flush right — where a reader's thumb
+   expects them. Page 1 carries none, by convention. */
+.page-number {
+  position: absolute;
+  top: 0.5in;
+  right: 1in;
+  font-family: var(--font-screenplay);
+  font-size: 12pt;
+  color: var(--page-text);
+  user-select: none;
+  pointer-events: none;
+}
+
+.shortcuts-hint {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 12px;
+  margin-top: 18px;
+}
+
+/* ---------- Title page ---------- */
+
+.title-page {
+  display: flex;
+  flex-direction: column;
+  padding: 1in;
+}
+
+.tp-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+}
+
+.tp-input {
+  font-family: var(--font-screenplay);
+  font-size: 12pt;
+  border: 1px dashed transparent;
+  background: transparent;
+  color: var(--page-text);
+  text-align: center;
+  width: 100%;
+  padding: 4px;
+  resize: none;
+}
+
+.tp-input:hover {
+  border-color: #d8d2c2;
+}
+
+.tp-input:focus {
+  outline: none;
+  border-color: var(--accent-dark);
+}
+
+.tp-input::placeholder {
+  color: #b9b4a8;
+}
+
+.tp-title {
+  font-size: 16pt;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+
+.tp-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.tp-contact,
+.tp-date {
+  text-align: left;
+  max-width: 3.2in;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 900px) {
+  .sidebar {
+    display: none;
+  }
+
+  .page {
+    padding: 0.6in 0.5in;
+    min-height: auto;
+  }
+
+  .el-character {
+    margin-left: 1.4in;
+  }
+
+  .el-dialogue {
+    margin-left: 0.7in;
+    margin-right: 0.7in;
+  }
+
+  .el-parenthetical {
+    margin-left: 1in;
+    margin-right: 1in;
+  }
+}
+
+/* ---------- Desktop shell ---------- */
+
+.app-shell {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* Every open tab stays mounted so its editor keeps caret and undo state;
+   only the active pane is on screen. */
+.tab-pane {
+  height: 100%;
+}
+
+.tab-pane.is-inactive {
+  display: none;
+}
+
+/* ---------- Title bar ---------- */
+
+.titlebar {
+  display: flex;
+  align-items: center;
+  height: 38px;
+  flex: none;
+  padding: 0 0 0 10px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  /* The native frame is off (electron/main.cts) — this strip is the only
+     thing left to drag the window by. */
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+/* macOS keeps its traffic lights in the system chrome; leave room for them. */
+.titlebar.is-mac {
+  padding-left: 84px;
+}
+
+/* Stretch rather than centre: the window buttons have to reach the very top
+   and right edges of the window, the way they do on Windows. */
+.titlebar-left,
+.titlebar-right {
+  display: flex;
+  align-self: stretch;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.titlebar-right {
+  justify-content: flex-end;
+}
+
+.titlebar-mark {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  margin-right: 6px;
+  flex: none;
+}
+
+.titlebar-title {
+  color: var(--text-dim);
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 40%;
+}
+
+.menubar {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.menubar-item {
+  -webkit-app-region: no-drag;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 13px;
+  padding: 5px 9px;
+  border-radius: 5px;
+}
+
+.menubar-item:hover,
+.menubar-item.is-open {
+  background: var(--bg-hover);
+}
+
+.window-controls {
+  display: flex;
+  align-self: stretch;
+  margin-left: 8px;
+  -webkit-app-region: no-drag;
+}
+
+.window-btn {
+  display: grid;
+  place-items: center;
+  align-self: stretch;
+  /* Windows 11's own caption-button width. */
+  width: 46px;
+  padding: 0;
+  border: none;
+  /* Chromium's default button style rounds the corners; caption buttons are
+     square blocks flush with the window edge. */
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  transition: background 0.1s;
+}
+
+.window-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.window-btn:active {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.window-btn-close:hover {
+  background: #c42b1c;
+  color: #fff;
+}
+
+.window-btn-close:active {
+  background: #b32a1c;
+  color: #fff;
+}
+
+/* ---------- Tab strip ---------- */
+
+.tabbar {
+  display: flex;
+  align-items: stretch;
+  height: 36px;
+  flex: none;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-app-region: drag;
+}
+
+.tabbar::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  -webkit-app-region: no-drag;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 8px 0 12px;
+  max-width: 220px;
+  min-width: 0;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+  border-top: 2px solid transparent;
+  color: var(--text-dim);
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.tab:hover {
+  background: var(--bg-hover);
+}
+
+.tab.is-active {
+  background: var(--bg);
+  border-top-color: var(--accent);
+  color: var(--text);
+}
+
+.tab.is-dragging {
+  opacity: 0.4;
+}
+
+.tab.is-drop-target {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.tab-icon {
+  font-size: 12px;
+  flex: none;
+}
+
+.tab-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tab-close {
+  flex: none;
+  border: none;
+  background: transparent;
+  color: inherit;
+  border-radius: 4px;
+  width: 18px;
+  height: 18px;
+  line-height: 1;
+  font-size: 11px;
+  opacity: 0;
+}
+
+.tab:hover .tab-close,
+.tab.is-active .tab-close {
+  opacity: 0.7;
+}
+
+.tab-close:hover {
+  background: var(--bg-hover);
+  opacity: 1;
+}
+
+.tab-new {
+  -webkit-app-region: no-drag;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 17px;
+  width: 34px;
+  flex: none;
+}
+
+.tab-new:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+/* ---------- Popup + context menus ---------- */
+
+.popup-menu {
+  position: fixed;
+  z-index: 200;
+  min-width: 200px;
+  max-width: 340px;
+  padding: 4px;
+  margin: 0;
+  list-style: none;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  outline: none;
+}
+
+.popup-item-wrap {
+  position: relative;
+}
+
+.popup-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  border-radius: 5px;
+  font-size: 13px;
+  text-align: left;
+}
+
+.popup-item.is-active:not(:disabled),
+.popup-item:hover:not(:disabled) {
+  background: var(--accent);
+  color: #fff;
+}
+
+.popup-item:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.popup-item.is-danger:not(:disabled) {
+  color: var(--danger);
+}
+
+.popup-item.is-danger.is-active:not(:disabled),
+.popup-item.is-danger:hover:not(:disabled) {
+  background: var(--danger);
+  color: #fff;
+}
+
+.popup-check {
+  width: 12px;
+  flex: none;
+  font-size: 11px;
+}
+
+.popup-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.popup-accel,
+.popup-arrow {
+  flex: none;
+  font-size: 11.5px;
+  opacity: 0.65;
+}
+
+.popup-sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--border);
+}
+
+/* ---------- Modals ---------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 24px;
+}
+
+.modal {
+  width: 100%;
+  max-width: 560px;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  outline: none;
+}
+
+.modal-title {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.open-search {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 15px;
+  font-family: inherit;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+}
+
+.open-search:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.open-list {
+  list-style: none;
+  overflow-y: auto;
+  min-height: 0;
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+
+.open-section {
+  color: var(--text-dim);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 10px 6px 4px;
+}
+
+.open-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+}
+
+.open-row.is-selected {
+  background: var(--accent);
+  color: #fff;
+}
+
+.open-row-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.open-row-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.open-row-meta {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.open-empty {
+  color: var(--text-dim);
+  text-align: center;
+  padding: 32px 0;
+}
+
+.open-footer {
+  justify-content: space-between;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.open-create {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.shortcuts-modal {
+  max-width: 760px;
+}
+
+.shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 8px 28px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.shortcuts-heading {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin: 12px 0 6px;
+}
+
+.shortcuts-list {
+  list-style: none;
+}
+
+.shortcuts-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.shortcuts-list kbd {
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  color: var(--text-dim);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+
+/* ---------- Print / PDF export ---------- */
+
+.print-only {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: letter;
+    margin: 0;
+  }
+
+  .titlebar,
+  .tabbar,
+  .toolbar,
+  .sidebar,
+  .shortcuts-hint,
+  .el-menu,
+  .find-panel {
+    display: none !important;
+  }
+
+  .app-shell,
+  .app-body,
+  .tab-pane,
+  .editor,
+  .editor-body,
+  .editor-main {
+    height: auto;
+    overflow: visible;
+  }
+
+  .print-only {
+    display: block;
+  }
+
+  .page {
+    box-shadow: none;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .title-page {
+    break-after: page;
+  }
+
+  /* The pages on screen are the pages that print: each sheet is its own
+     break, and the stacking gap goes away. */
+  .script-page + .script-page {
+    margin-top: 0;
+  }
+
+  .script-page {
+    break-after: page;
+  }
+
+  .script-page:last-child {
+    break-after: auto;
+  }
+
+  .el-character,
+  .el-dialogue,
+  .el-parenthetical {
+    break-inside: avoid;
+  }
+}
+
+/* ---------- Document files: unsaved markers, prompts, recovery ---------- */
+
+.titlebar-dirty {
+  color: var(--accent);
+  margin-right: 6px;
+  font-size: 10px;
+  vertical-align: middle;
+}
+
+.titlebar-path {
+  color: var(--text-dim);
+  opacity: 0.7;
+}
+
+.save-state-btn {
+  -webkit-app-region: no-drag;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--accent);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.save-state-btn:hover {
+  background: var(--bg-hover);
+}
+
+.save-state-btn.is-saved {
+  color: #7fbf7f;
+  cursor: default;
+}
+
+/* The tab dot and the close cross share one button: dot at rest, cross on
+   hover, so an unsaved tab reads at a glance without growing wider. */
+.tab-close-mark,
+.tab-dirty-mark {
+  display: block;
+  line-height: 1;
+}
+
+.tab-close .tab-dirty-mark {
+  display: none;
+  color: var(--accent);
+  font-size: 10px;
+}
+
+.tab-close.is-dirty .tab-close-mark {
+  display: none;
+}
+
+.tab-close.is-dirty .tab-dirty-mark {
+  display: block;
+}
+
+.tab-close.is-dirty:hover .tab-close-mark {
+  display: block;
+}
+
+.tab-close.is-dirty:hover .tab-dirty-mark {
+  display: none;
+}
+
+.modal-narrow {
+  max-width: 420px;
+}
+
+.modal-text {
+  color: var(--text-dim);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.modal-emphasis {
+  font-weight: 600;
+}
+
+.modal-list {
+  list-style: disc;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13.5px;
+}
+
+.recovery-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.recovery-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.recovery-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.recovery-name {
+  font-weight: 600;
+}
+
+.recovery-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recovery-actions {
+  display: flex;
+  gap: 8px;
+  flex: none;
+}
+
+/* ---------- Character & location sheets ---------- */
+
+.bible-split {
+  display: grid;
+  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.bible-index {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  position: sticky;
+  top: 0;
+}
+
+.bible-index-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bible-index-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bible-index-item {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 7px 10px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bible-index-item:hover {
+  background: var(--bg-hover);
+}
+
+/* Selection reads as a tint of the accent rather than a box: no border and
+   no inset rule, so nothing shifts or double-frames when an item is also
+   focused. The name warms to the accent, which is what the eye follows. */
+.bible-index-item.is-selected {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.bible-index-item.is-selected .bible-index-name {
+  color: #fff;
+}
+
+.bible-index-item.is-selected .char-meta {
+  color: color-mix(in srgb, var(--accent) 55%, var(--text-dim));
+}
+
+/* The default focus ring is the OS's orange, which fights the palette. */
+.bible-index-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.bible-index-name {
+  font-weight: 600;
+  font-size: 13.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Marks a sheet with something written in it, so a long cast shows at a
+   glance which characters have been worked out and which are just names. */
+.bible-index-dot {
+  color: var(--accent);
+  font-size: 8px;
+}
+
+.bible-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.bible-detail-empty {
+  padding-top: 40px;
+}
+
+.sheet-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+
+.sheet-title-group {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sheet-title {
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 0;
+}
+
+.sheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sheet-section {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sheet-section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sheet-section-title,
+.sheet-section-heading {
+  flex: 1;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 4px 6px;
+}
+
+.sheet-section-title:hover {
+  border-color: var(--border);
+}
+
+.sheet-section-title:focus {
+  border-color: var(--accent);
+  color: inherit;
+  outline: none;
+}
+
+.sheet-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Label, value and controls on one line: the label is editable in place, so
+   there is no separate "edit the form" mode to enter and leave. */
+.sheet-field {
+  display: grid;
+  grid-template-columns: minmax(90px, 160px) minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+}
+
+.sheet-field-label {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 13px;
+  padding: 6px;
+  text-align: right;
+}
+
+.sheet-field-label:hover {
+  border-color: var(--border);
+}
+
+.sheet-field-label:focus {
+  border-color: var(--accent);
+  color: inherit;
+  outline: none;
+}
+
+.sheet-field-value {
+  width: 100%;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: inherit;
+  font: inherit;
+  font-size: 13.5px;
+  padding: 6px 8px;
+  resize: vertical;
+}
+
+.sheet-field-value:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.sheet-row-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.sheet-field:hover .sheet-row-actions,
+.sheet-field:focus-within .sheet-row-actions,
+.sheet-section-head:hover .sheet-row-actions,
+.sheet-section-head:focus-within .sheet-row-actions {
+  opacity: 1;
+}
+
+.icon-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  border-radius: 4px;
+  width: 22px;
+  height: 26px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.icon-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: inherit;
+}
+
+.icon-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.icon-btn.is-active {
+  color: var(--accent);
+}
+
+.icon-btn-danger:hover:not(:disabled) {
+  color: var(--danger);
+}
+
+.sheet-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
