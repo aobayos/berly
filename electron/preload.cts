@@ -9,8 +9,8 @@ import type {
   ProjectMeta,
   RecoveryInfo,
   StorageBackend,
-} from '../src/types';
-import type { DesktopBridge, RecentProject, SpellContext } from '../src/desktopTypes';
+} from '../src/model/types';
+import type { DesktopBridge, RecentProject, SpellContext } from '../src/desktop/types';
 
 const berlyAPI: StorageBackend = {
   listProjects: () => ipcRenderer.invoke('listProjects') as Promise<ProjectMeta[]>,
@@ -47,7 +47,7 @@ const berlyAPI: StorageBackend = {
 };
 
 /** Everything that isn't persistence: window chrome, OS menus, recent
- * documents, clipboard. Kept apart from berlyAPI so storage.ts stays the
+ * documents, clipboard. Kept apart from berlyAPI so src/storage/index.ts stays the
  * single seam for saving/loading (see CLAUDE.md). */
 const berlyDesktop: DesktopBridge = {
   platform: process.platform,
