@@ -9,9 +9,9 @@ import {
   type MenuItemConstructorOptions,
 } from 'electron';
 import path from 'node:path';
-import { migrate } from '../src/projectMigrate';
-import { newId } from '../src/types';
-import type { DocumentInfo, Project, ProjectMeta, RecoveryInfo } from '../src/types';
+import { migrate } from '../src/model/projectMigrate';
+import { newId } from '../src/model/types';
+import type { DocumentInfo, Project, ProjectMeta, RecoveryInfo } from '../src/model/types';
 import { writeScreenplayPdf } from './screenplayPdf';
 import {
   addRecent,
@@ -98,7 +98,7 @@ ipcMain.handle('deleteProject', async (_e, id: string): Promise<void> => {
 });
 
 /** Validates imported JSON and registers it under a fresh id — mirrors
- * storage.web.ts's importProject so both backends behave identically. */
+ * src/storage/web.ts's importProject so both backends behave identically. */
 ipcMain.handle('importProject', (_e, json: string): Project => {
   const data = migrate(JSON.parse(json));
   if (!data) throw new Error('Invalid BERLY project file');
@@ -197,7 +197,7 @@ ipcMain.handle('doc:discardRecovery', (_e, id: string): void => {
 });
 
 /** Builds the PDF directly from the project/script data (see
- * screenplayPdf.cts) rather than rendering the app's page —
+ * screenplayPdf.ts) rather than rendering the app's page —
  * webContents.printToPDF() only captures what fits the window's viewport
  * instead of truly paginating, which cropped longer scripts. */
 ipcMain.handle(
@@ -262,7 +262,7 @@ ipcMain.on('clipboard:writeText', (_e, text: string) => clipboard.writeText(text
 //
 // Chromium marks misspellings on its own, but the suggestions for them live
 // only in the native context menu — which this app replaces with its own (see
-// src/contextMenu.tsx). So the words and their suggestions are forwarded to
+// src/shell/contextMenu.tsx). So the words and their suggestions are forwarded to
 // the renderer instead, and the corrections are applied back here, where
 // replaceMisspelling can edit the field without disturbing the caret.
 
@@ -349,7 +349,7 @@ ipcMain.handle('app:takePendingPaths', (): string[] => {
 
 // ---------- Menus ----------
 
-/** The app menu is drawn by the renderer (see src/components/TitleBar.tsx) so
+/** The app menu is drawn by the renderer (see src/shell/TitleBar.tsx) so
  * it can match the app's theme and language. macOS has no such freedom — the
  * menu bar belongs to the system — so there we build a native menu whose
  * items fire the very same command ids over IPC. */

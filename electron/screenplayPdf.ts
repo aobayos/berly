@@ -5,7 +5,7 @@
 // on-screen CSS) with real page breaks.
 import PDFDocument from 'pdfkit';
 import fs from 'node:fs';
-import type { ElementType, Project, Script } from '../src/types';
+import type { ElementType, Project, Script } from '../src/model/types';
 
 const PAGE_HEIGHT = 11 * 72;
 const MARGIN_TOP = 1 * 72;
