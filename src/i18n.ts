@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { ElementType } from './types';
+import type { ElementType } from './model/types';
 
 export type Lang = 'en' | 'fr';
 

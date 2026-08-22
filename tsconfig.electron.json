@@ -17,8 +17,8 @@
     "electron/screenplayPdf.ts",
     "electron/recents.ts",
     "electron/documents.ts",
-    "src/projectMigrate.ts",
-    "src/types.ts",
-    "src/desktopTypes.ts"
+    "src/model/projectMigrate.ts",
+    "src/model/types.ts",
+    "src/desktop/types.ts"
   ]
 }

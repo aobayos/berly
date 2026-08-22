@@ -1,60 +1,60 @@
 {
-  "name": "berly",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "main": "dist-electron/electron/main.cjs",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "oxlint",
-    "preview": "vite preview",
-    "electron:build-main": "node scripts/prep-dist-electron.cjs && tsc -p tsconfig.electron.json",
-    "electron:dev": "npm run electron:build-main && concurrently -k -n VITE,ELECTRON \"vite\" \"wait-on http://localhost:5173 && electron .\"",
-    "electron:build": "npm run build && npm run electron:build-main && electron-builder"
-  },
-  "build": {
-    "appId": "com.berly.app",
-    "productName": "BERLY",
-    "files": [
-      "dist/**/*",
-      "dist-electron/**/*",
-      "node_modules/**/*",
-      "package.json"
-    ],
-    "directories": {
-      "output": "release"
-    },
-    "fileAssociations": [
-      {
-        "ext": "berly",
-        "name": "BERLY project",
-        "role": "Editor"
-      }
-    ]
-  },
-  "dependencies": {
-    "@dnd-kit/core": "^6.3.1",
-    "@dnd-kit/sortable": "^10.0.0",
-    "@dnd-kit/utilities": "^3.2.2",
-    "@phosphor-icons/react": "^2.1.10",
-    "pdfkit": "^0.19.1",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "react-router-dom": "^7.18.1"
-  },
-  "devDependencies": {
-    "@types/node": "^24.13.2",
-    "@types/pdfkit": "^0.17.6",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.3",
-    "concurrently": "^9.2.4",
-    "electron": "^41.7.1",
-    "electron-builder": "^26.15.3",
-    "oxlint": "^1.71.0",
-    "typescript": "~6.0.2",
-    "vite": "^8.1.1",
-    "wait-on": "^9.1.0"
-  }
+	"name": "berly",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"main": "dist-electron/electron/main.cjs",
+	"scripts": {
+		"dev": "vite",
+		"build": "tsc -b && vite build",
+		"lint": "oxlint",
+		"preview": "vite preview",
+		"electron:build-main": "node scripts/prep-dist-electron.cjs && tsc -p tsconfig.electron.json",
+		"electron:dev": "npm run electron:build-main && concurrently -k -n VITE,ELECTRON \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+		"electron:build": "npm run build && npm run electron:build-main && electron-builder"
+	},
+	"build": {
+		"appId": "com.berly.app",
+		"productName": "BERLY",
+		"files": [
+			"dist/**/*",
+			"dist-electron/**/*",
+			"node_modules/**/*",
+			"package.json"
+		],
+		"directories": {
+			"output": "release"
+		},
+		"fileAssociations": [
+			{
+				"ext": "berly",
+				"name": "BERLY project",
+				"role": "Editor"
+			}
+		]
+	},
+	"dependencies": {
+		"@dnd-kit/core": "^6.3.1",
+		"@dnd-kit/sortable": "^10.0.0",
+		"@dnd-kit/utilities": "^3.2.2",
+		"@phosphor-icons/react": "^2.1.10",
+		"pdfkit": "^0.19.1",
+		"react": "^19.2.7",
+		"react-dom": "^19.2.7",
+		"react-router-dom": "^7.18.1"
+	},
+	"devDependencies": {
+		"@types/node": "^24.13.2",
+		"@types/pdfkit": "^0.17.6",
+		"@types/react": "^19.2.17",
+		"@types/react-dom": "^19.2.3",
+		"@vitejs/plugin-react": "^6.0.3",
+		"concurrently": "^9.2.4",
+		"electron": "^41.7.1",
+		"electron-builder": "^26.15.3",
+		"oxlint": "^1.71.0",
+		"typescript": "~6.0.2",
+		"vite": "^8.1.1",
+		"wait-on": "^9.1.0"
+	}
 }

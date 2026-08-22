@@ -1,32 +1,50 @@
-# React + TypeScript + Vite
+# BERLY
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A screenwriting editor. React + TypeScript + Vite, shipping both as a web build and as an Electron desktop app, fully bilingual EN/FR.
 
-Currently, two official plugins are available:
+On the desktop a project is a real `.berly` file that you open and save like any document; in the browser it lives in `localStorage` and saves continuously.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Getting started
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+npm install
+npm run dev            # web app on http://localhost:5173
+npm run electron:dev   # desktop app (Vite + Electron together)
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Scripts
+
+| Script | What it does |
+| --- | --- |
+| `dev` | Vite dev server (web only) |
+| `build` | `tsc -b` then production web build into `dist/` |
+| `lint` | oxlint |
+| `preview` | serve the production web build |
+| `electron:build-main` | compile the Electron main/preload into `dist-electron/` |
+| `electron:dev` | build main, then run Vite and Electron together |
+| `electron:build` | full build and package with electron-builder into `release/` |
+
+There is no test suite yet.
+
+`build` and `electron:build-main` are two separate TypeScript programs, so changes under `electron/` are not covered by `build` alone — run both.
+
+## Layout
+
+```
+src/
+  main.tsx  App.tsx  i18n.ts  index.css
+  model/    pure data + transforms — no React, no DOM
+  storage/  persistence facade, web backend, open-document store
+  desktop/  Electron bridge facade + shared types
+  shell/    app chrome: tabs, commands, menus, shortcuts, title bar
+  ui/       presentational primitives shared across features
+  editor/   the script editor and its panes
+  bible/    character & location sheets
+  library/  project/episode lists, open-project and recovery modals
+electron/   main process, preload, PDF export, recents, document files
+scripts/    build helpers
+```
+
+Imports are relative and the tree is kept two levels deep on purpose: the Electron main process compiles a few `src/` modules with plain `tsc` and no bundler, and `tsc` does not rewrite path aliases on emit — so a `@/` alias would break the packaged app.
+
+Architecture notes for contributors (and for Claude Code) live in `CLAUDE.md` one directory up.

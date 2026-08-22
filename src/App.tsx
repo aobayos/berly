@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import ProjectList from './components/ProjectList';
-import TitleBar from './components/TitleBar';
-import TabBar from './components/TabBar';
-import Workspace from './components/Workspace';
-import OpenProjectModal, { type OpenMode } from './components/OpenProjectModal';
-import ShortcutsModal from './components/ShortcutsModal';
+import ProjectList from './library/ProjectList';
+import TitleBar from './shell/TitleBar';
+import TabBar from './shell/TabBar';
+import Workspace from './shell/Workspace';
+import OpenProjectModal, { type OpenMode } from './library/OpenProjectModal';
+import ShortcutsModal from './shell/ShortcutsModal';
 import {
   DICTS,
   I18nContext,
@@ -13,8 +13,8 @@ import {
   useI18n,
   type Lang,
 } from './i18n';
-import { TabsProvider, useTabs } from './tabs';
-import { ContextMenuProvider } from './contextMenu';
+import { TabsProvider, useTabs } from './shell/tabs';
+import { ContextMenuProvider } from './shell/contextMenu';
 import {
   EditorCommandsProvider,
   ShellActionsProvider,
@@ -22,8 +22,8 @@ import {
   useMenus,
   type CommandContext,
   type ShellActions,
-} from './appCommands';
-import { matchesAccelerator } from './shortcuts';
+} from './shell/commands';
+import { matchesAccelerator } from './shell/shortcuts';
 import {
   clearRecents as clearRecentsStore,
   forceCloseWindow,
@@ -34,7 +34,7 @@ import {
   setSpellCheckerLanguage,
   setWindowUnsaved,
   takePendingPaths,
-} from './desktop';
+} from './desktop/bridge';
 import { importProject } from './storage';
 import {
   discardRecovery,
@@ -43,10 +43,10 @@ import {
   openFilePath,
   unsavedDocuments,
   useHasUnsaved,
-} from './documents';
-import { UnsavedGuardProvider, useUnsavedGuard } from './components/UnsavedGuard';
-import RecoveryModal from './components/RecoveryModal';
-import type { RecentProject } from './desktopTypes';
+} from './storage/documents';
+import { UnsavedGuardProvider, useUnsavedGuard } from './shell/UnsavedGuard';
+import RecoveryModal from './library/RecoveryModal';
+import type { RecentProject } from './desktop/types';
 
 export default function App() {
   const [lang, setLangState] = useState<Lang>(loadLang);
