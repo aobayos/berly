@@ -1,6 +1,6 @@
 // Help ▸ Keyboard Shortcuts. The application shortcuts are rendered from the
 // command registry, so the sheet can't drift from what the keys actually do;
-// the editor's own in-block keys (Enter, Tab, Ctrl+1–6…) aren't commands and
+// the editor's own in-block keys (Enter, Tab, Ctrl+1–9…) aren't commands and
 // are listed alongside them.
 import { useEffect } from 'react';
 import { groupCommands, type Command } from './commands';
@@ -30,7 +30,7 @@ export default function ShortcutsModal({ commands, onClose }: Props) {
   const editorKeys: [string, string][] = [
     ['Enter', t.keyEnter],
     ['Tab', t.keyTab],
-    ['Mod+1…6', t.keyElementType],
+    ['Mod+1…9', t.keyElementType],
     ['Mod+Space', t.keySuggestions],
     ['Backspace', t.keyMerge],
   ];

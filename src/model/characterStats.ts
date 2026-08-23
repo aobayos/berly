@@ -43,14 +43,16 @@ export function characterStats(elements: ScriptElement[]): CharacterStat[] {
       continue;
     }
 
-    if (el.type === 'dialogue' && currentCharacter) {
+    // Lyrics are dialogue that happens to be sung — they belong to the cue
+    // above them and count as that character's lines.
+    if ((el.type === 'dialogue' || el.type === 'lyrics') && currentCharacter) {
       const s = stats.get(currentCharacter);
       if (s) s.dialogueCount++;
       continue;
     }
 
     if (el.type !== 'parenthetical') {
-      // Action/transition ends the current dialogue block.
+      // Anything else (action, shot, transition, centered) ends the block.
       currentCharacter = null;
     }
   }

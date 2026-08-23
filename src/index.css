@@ -784,6 +784,23 @@ a:focus-visible,
   margin-top: 12px;
 }
 
+.el-shot {
+  text-transform: uppercase;
+  margin-top: 12px;
+}
+
+.el-lyrics {
+  margin-left: 1in;
+  margin-right: 1.5in;
+  font-style: italic;
+  margin-top: 1px;
+}
+
+.el-centered {
+  text-align: center;
+  margin-top: 12px;
+}
+
 .page > .el-wrap:first-child .el {
   margin-top: 0;
 }
@@ -905,6 +922,11 @@ a:focus-visible,
   .el-parenthetical {
     margin-left: 1in;
     margin-right: 1in;
+  }
+
+  .el-lyrics {
+    margin-left: 0.7in;
+    margin-right: 0.7in;
   }
 }
 
