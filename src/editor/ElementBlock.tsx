@@ -309,10 +309,13 @@ export default function ElementBlock({
       return;
     }
 
-    if (e.ctrlKey && !e.altKey && e.key >= '1' && e.key <= '6') {
-      e.preventDefault();
-      setMenu(null);
-      onSetType(element.id, ELEMENT_TYPES[Number(e.key) - 1]);
+    if (e.ctrlKey && !e.altKey && e.key >= '1' && e.key <= '9') {
+      const type = ELEMENT_TYPES[Number(e.key) - 1];
+      if (type) {
+        e.preventDefault();
+        setMenu(null);
+        onSetType(element.id, type);
+      }
       return;
     }
 

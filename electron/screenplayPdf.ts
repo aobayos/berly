@@ -19,8 +19,9 @@ const CHARS_PER_INCH = 10; // Courier 12pt is exactly 7.2pt/char = 10 cpi
 interface Layout {
   leftIn: number;
   widthIn: number;
-  align?: 'left' | 'right';
+  align?: 'left' | 'right' | 'center';
   bold?: boolean;
+  italic?: boolean;
   upper?: boolean;
   blankBefore: number;
 }
@@ -33,7 +34,17 @@ const LAYOUT: Record<ElementType, Layout> = {
   parenthetical: { leftIn: 1.6, widthIn: 2.5, blankBefore: 0 },
   dialogue: { leftIn: 1.0, widthIn: 3.5, blankBefore: 0 },
   transition: { leftIn: 0, widthIn: CONTENT_WIDTH_IN, align: 'right', upper: true, blankBefore: 1 },
+  shot: { leftIn: 0, widthIn: CONTENT_WIDTH_IN, upper: true, blankBefore: 1 },
+  lyrics: { leftIn: 1.0, widthIn: 3.5, italic: true, blankBefore: 0 },
+  centered: { leftIn: 0, widthIn: CONTENT_WIDTH_IN, align: 'center', blankBefore: 1 },
 };
+
+function courierFace(layout: Layout): string {
+  if (layout.bold && layout.italic) return 'Courier-BoldOblique';
+  if (layout.bold) return 'Courier-Bold';
+  if (layout.italic) return 'Courier-Oblique';
+  return 'Courier';
+}
 
 function wrapText(text: string, maxChars: number): string[] {
   const words = text.split(/\s+/).filter(Boolean);
@@ -140,11 +151,13 @@ function drawScript(doc: PDFKit.PDFDocument, script: Script): void {
     // Avoid stranding a character cue at the bottom of a page with no
     // room for the dialogue that follows it.
     const next = nextNonEmptyType(script.elements, i);
-    const needsFollowUp = el.type === 'character' && (next === 'dialogue' || next === 'parenthetical');
+    const needsFollowUp =
+      el.type === 'character' &&
+      (next === 'dialogue' || next === 'parenthetical' || next === 'lyrics');
     ensureRoom(blank + lines.length + (needsFollowUp ? 1 : 0));
 
     y += blank * LINE_HEIGHT;
-    doc.font(layout.bold ? 'Courier-Bold' : 'Courier').fontSize(12);
+    doc.font(courierFace(layout)).fontSize(12);
     const x = MARGIN_LEFT + layout.leftIn * 72;
     const width = layout.widthIn * 72;
 

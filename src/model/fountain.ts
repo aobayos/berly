@@ -59,16 +59,33 @@ export function toFountain(project: Project, script: Script): string {
         lines.push('');
         break;
       }
+      case 'shot': {
+        // Fountain has no shot element; an uppercase action line is how every
+        // other tool represents one, and it round-trips back through the
+        // importer's uppercase-action heuristic.
+        lines.push(text.toUpperCase());
+        lines.push('');
+        break;
+      }
+      case 'lyrics': {
+        lines.push(text.startsWith('~') ? text : `~${text}`);
+        break;
+      }
+      case 'centered': {
+        // "> text <" is Fountain's centered form; it must be on its own line.
+        lines.push(`> ${text.replace(/^>\s*|\s*<$/g, '')} <`);
+        lines.push('');
+        break;
+      }
     }
 
     // Guard: a character cue must be followed by dialogue/parenthetical in
     // Fountain; if the writer left it dangling, close the block.
-    if (
-      el.type === 'character' &&
-      nextNonEmptyType(script.elements, i) !== 'dialogue' &&
-      nextNonEmptyType(script.elements, i) !== 'parenthetical'
-    ) {
-      lines.push('');
+    if (el.type === 'character') {
+      const next = nextNonEmptyType(script.elements, i);
+      if (next !== 'dialogue' && next !== 'parenthetical' && next !== 'lyrics') {
+        lines.push('');
+      }
     }
   });
 

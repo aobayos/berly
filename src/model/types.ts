@@ -4,7 +4,10 @@ export type ElementType =
   | 'character'
   | 'parenthetical'
   | 'dialogue'
-  | 'transition';
+  | 'transition'
+  | 'shot'
+  | 'lyrics'
+  | 'centered';
 
 export type ProjectKind = 'movie' | 'show';
 
@@ -156,6 +159,8 @@ export interface StorageBackend {
   discardRecovery?(id: string): Promise<void>;
 }
 
+/** Order is load-bearing: it drives both the type chooser and Ctrl+1…9, so
+ * the six original types keep their existing positions. */
 export const ELEMENT_TYPES: ElementType[] = [
   'scene',
   'action',
@@ -163,6 +168,9 @@ export const ELEMENT_TYPES: ElementType[] = [
   'dialogue',
   'parenthetical',
   'transition',
+  'shot',
+  'lyrics',
+  'centered',
 ];
 
 /** The element that logically follows each type when Enter is pressed.
@@ -174,6 +182,9 @@ export const NEXT_ELEMENT_TYPE: Partial<Record<ElementType, ElementType>> = {
   character: 'dialogue',
   parenthetical: 'dialogue',
   transition: 'scene',
+  shot: 'action',
+  // A song runs over several lines, so Enter stays in lyrics.
+  lyrics: 'lyrics',
 };
 
 export function newId(): string {

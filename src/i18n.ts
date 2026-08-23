@@ -98,7 +98,10 @@ const en = {
     dialogue: 'Dialogue',
     parenthetical: 'Parenthetical',
     transition: 'Transition',
-  } as Record<ElementType, string>,
+    shot: 'Shot',
+    lyrics: 'Lyrics',
+    centered: 'Centered',
+  } satisfies Record<ElementType, string>,
 
   // Element placeholders
   placeholders: {
@@ -108,10 +111,13 @@ const en = {
     dialogue: 'What do they say?',
     parenthetical: '(how they say it)',
     transition: 'CUT TO:',
-  } as Record<ElementType, string>,
+    shot: 'ANGLE ON —',
+    lyrics: 'Sing the line…',
+    centered: 'Centered text',
+  } satisfies Record<ElementType, string>,
 
   shortcutsHint:
-    'Enter: new element · Tab: change type · Ctrl+1–6: set type · Ctrl+Space: suggestions · Ctrl+S: save · Ctrl+Z: undo · Ctrl+Shift+Z: redo · Ctrl+F: find · F1: all shortcuts',
+    'Enter: new element · Tab: change type · Ctrl+1–9: set type · Ctrl+Space: suggestions · Ctrl+S: save · Ctrl+Z: undo · Ctrl+Shift+Z: redo · Ctrl+F: find · F1: all shortcuts',
 
   // Menu bar
   menuFile: 'File',
@@ -314,6 +320,9 @@ const fr: Dict = {
     dialogue: 'Dialogue',
     parenthetical: 'Didascalie',
     transition: 'Transition',
+    shot: 'Plan',
+    lyrics: 'Paroles',
+    centered: 'Centré',
   },
 
   placeholders: {
@@ -323,10 +332,13 @@ const fr: Dict = {
     dialogue: 'Que disent-ils ?',
     parenthetical: '(la manière de le dire)',
     transition: 'COUPE À :',
+    shot: 'PLAN SUR —',
+    lyrics: 'Chantez la ligne…',
+    centered: 'Texte centré',
   },
 
   shortcutsHint:
-    'Entrée : nouvel élément · Tab : changer le type · Ctrl+1–6 : type direct · Ctrl+Espace : suggestions · Ctrl+S : enregistrer · Ctrl+Z : annuler · Ctrl+Maj+Z : rétablir · Ctrl+F : rechercher · F1 : tous les raccourcis',
+    'Entrée : nouvel élément · Tab : changer le type · Ctrl+1–9 : type direct · Ctrl+Espace : suggestions · Ctrl+S : enregistrer · Ctrl+Z : annuler · Ctrl+Maj+Z : rétablir · Ctrl+F : rechercher · F1 : tous les raccourcis',
 
   menuFile: 'Fichier',
   menuEdit: 'Édition',
