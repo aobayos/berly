@@ -2,6 +2,8 @@
 	"name": "berly",
 	"private": true,
 	"version": "0.0.1",
+	"description": "A bilingual screenwriting editor for film and television.",
+	"author": "Bayos",
 	"type": "module",
 	"main": "dist-electron/electron/main.cjs",
 	"scripts": {
