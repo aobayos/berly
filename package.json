@@ -13,7 +13,8 @@
 		"preview": "vite preview",
 		"electron:build-main": "node scripts/prep-dist-electron.cjs && tsc -p tsconfig.electron.json",
 		"electron:dev": "npm run electron:build-main && concurrently -k -n VITE,ELECTRON \"vite\" \"wait-on http://localhost:5173 && electron .\"",
-		"electron:build": "npm run build && npm run electron:build-main && electron-builder"
+		"electron:build": "npm run build && npm run electron:build-main && electron-builder",
+		"electron:build:out": "npm run build && npm run electron:build-main && node scripts/build-out.cjs"
 	},
 	"build": {
 		"appId": "com.berly.app",
@@ -31,7 +32,8 @@
 			{
 				"ext": "berly",
 				"name": "BERLY project",
-				"role": "Editor"
+				"role": "Editor",
+				"icon": "build/fileicon.ico"
 			}
 		]
 	},
