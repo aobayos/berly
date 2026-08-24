@@ -116,6 +116,34 @@ const en = {
     centered: 'Centered text',
   } satisfies Record<ElementType, string>,
 
+  // Screenplay import
+  menuImportScreenplay: 'Import Screenplay…',
+  importTitle: 'Import screenplay',
+  importFrom: 'From',
+  importFormatFountain: 'Fountain',
+  importFormatFdx: 'Final Draft',
+  importScenesRead: 'scenes',
+  importElementsRead: 'elements',
+  importTargetNew: 'As a new project',
+  importTargetEpisode: 'As an episode of a series',
+  importProjectName: 'Project name',
+  importEpisodeName: 'Episode name',
+  importSeries: 'Series',
+  importMode: 'Add or replace',
+  importModeAppend: 'Add as a new episode',
+  importModeReplace: 'Replace an episode',
+  importEpisodeToReplace: 'Episode to replace',
+  importReplaceWarning:
+    'Replacing overwrites that episode’s contents. This cannot be undone.',
+  importConfirm: 'Import',
+  importNoSeries: 'No series yet — create one first, or import as a new project.',
+  importDroppedTitle: 'Not everything could be imported',
+  importDroppedIntro:
+    'BERLY has no element for these, so they were left out. The rest came through:',
+  importFailed: 'This file could not be read as a screenplay.',
+  importEmpty: 'No screenplay content was found in this file.',
+  importDone: 'Imported',
+
   shortcutsHint:
     'Enter: new element · Tab: change type · Ctrl+1–9: set type · Ctrl+Space: suggestions · Ctrl+S: save · Ctrl+Z: undo · Ctrl+Shift+Z: redo · Ctrl+F: find · F1: all shortcuts',
 
@@ -336,6 +364,35 @@ const fr: Dict = {
     lyrics: 'Chantez la ligne…',
     centered: 'Texte centré',
   },
+
+  // Import de scénario
+  menuImportScreenplay: 'Importer un scénario…',
+  importTitle: 'Importer un scénario',
+  importFrom: 'Depuis',
+  importFormatFountain: 'Fountain',
+  importFormatFdx: 'Final Draft',
+  importScenesRead: 'scènes',
+  importElementsRead: 'éléments',
+  importTargetNew: 'Comme nouveau projet',
+  importTargetEpisode: 'Comme épisode d’une série',
+  importProjectName: 'Nom du projet',
+  importEpisodeName: 'Nom de l’épisode',
+  importSeries: 'Série',
+  importMode: 'Ajouter ou remplacer',
+  importModeAppend: 'Ajouter comme nouvel épisode',
+  importModeReplace: 'Remplacer un épisode',
+  importEpisodeToReplace: 'Épisode à remplacer',
+  importReplaceWarning:
+    'Le remplacement écrase le contenu de cet épisode. Cette action est irréversible.',
+  importConfirm: 'Importer',
+  importNoSeries:
+    'Aucune série pour l’instant — créez-en une, ou importez comme nouveau projet.',
+  importDroppedTitle: 'Tout n’a pas pu être importé',
+  importDroppedIntro:
+    'BERLY n’a pas d’élément pour ceci, donc ces lignes ont été laissées de côté. Le reste est bien passé :',
+  importFailed: 'Ce fichier n’a pas pu être lu comme un scénario.',
+  importEmpty: 'Aucun contenu de scénario trouvé dans ce fichier.',
+  importDone: 'Importé',
 
   shortcutsHint:
     'Entrée : nouvel élément · Tab : changer le type · Ctrl+1–9 : type direct · Ctrl+Espace : suggestions · Ctrl+S : enregistrer · Ctrl+Z : annuler · Ctrl+Maj+Z : rétablir · Ctrl+F : rechercher · F1 : tous les raccourcis',

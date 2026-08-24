@@ -101,12 +101,15 @@ export interface MenuSpec {
 export interface ShellActions {
   openProjectDialog(mode: 'open' | 'create'): void;
   openFromFile(): void;
+  /** Picks a .fountain/.fdx file and opens the import target dialog. */
+  importScreenplay(): void;
   showShortcuts(): void;
 }
 
 const ShellActionsContext = createContext<ShellActions>({
   openProjectDialog: () => {},
   openFromFile: () => {},
+  importScreenplay: () => {},
   showShortcuts: () => {},
 });
 
@@ -154,6 +157,13 @@ export function useCommands(ctx: CommandContext): Command[] {
         group: 'project',
         enabled: true,
         run: ctx.openFromFile,
+      },
+      {
+        id: 'project.importScreenplay',
+        label: t.menuImportScreenplay,
+        group: 'project',
+        enabled: true,
+        run: ctx.importScreenplay,
       },
       {
         id: 'file.save',
@@ -328,6 +338,8 @@ export function useMenus(commands: Command[], ctx: CommandContext): MenuSpec[] {
           item('project.new'),
           item('project.open'),
           item('project.openFile'),
+          item('project.importScreenplay'),
+          item('project.importScreenplay'),
           { label: t.menuOpenRecent, submenu: recentEntries() },
           { separator: true },
           item('file.save'),

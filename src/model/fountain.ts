@@ -60,9 +60,11 @@ export function toFountain(project: Project, script: Script): string {
         break;
       }
       case 'shot': {
-        // Fountain has no shot element; an uppercase action line is how every
-        // other tool represents one, and it round-trips back through the
-        // importer's uppercase-action heuristic.
+        // Fountain has no shot element, so a shot leaves as an uppercase
+        // action line and comes back as action. Deliberately not guessed at on
+        // import: plenty of ordinary action is written in caps for emphasis,
+        // and mislabelling those is worse than losing the shot type. FDX names
+        // the type outright, so shots survive that round trip.
         lines.push(text.toUpperCase());
         lines.push('');
         break;

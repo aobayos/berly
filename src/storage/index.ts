@@ -2,7 +2,7 @@
 // backend (window.berlyAPI, injected by electron/preload.cts) when running
 // inside the desktop app, and falls back to the localStorage-backed web
 // implementation (./web.ts) in the browser.
-import type { Project, StorageBackend } from '../model/types';
+import type { ImportedFile, Project, StorageBackend } from '../model/types';
 import * as webBackend from './web';
 
 declare global {
@@ -36,6 +36,13 @@ export async function exportPdf(
   } else {
     window.print();
   }
+}
+
+/** Native screenplay picker, desktop only. Null on the web, where there is no
+ * way to read an arbitrary path — App.tsx falls back to a file input, the same
+ * split as openFromFile. */
+export async function pickScreenplayFile(): Promise<ImportedFile | null> {
+  return backend.pickScreenplay ? backend.pickScreenplay() : null;
 }
 
 /** Triggers a browser download of the given content. Works the same in the

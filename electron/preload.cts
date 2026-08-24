@@ -5,6 +5,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type {
   DocumentInfo,
+  ImportedFile,
   Project,
   ProjectMeta,
   RecoveryInfo,
@@ -35,6 +36,9 @@ const berlyAPI: StorageBackend = {
     ipcRenderer.invoke('doc:saveAs', project) as Promise<DocumentInfo | null>,
   documentInfo: (id: string) =>
     ipcRenderer.invoke('doc:info', id) as Promise<DocumentInfo | null>,
+
+  pickScreenplay: () =>
+    ipcRenderer.invoke('doc:pickScreenplay') as Promise<ImportedFile | null>,
 
   writeRecovery: (project: Project) =>
     ipcRenderer.invoke('doc:writeRecovery', project) as Promise<void>,

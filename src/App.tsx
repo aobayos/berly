@@ -35,7 +35,15 @@ import {
   setWindowUnsaved,
   takePendingPaths,
 } from './desktop/bridge';
-import { importProject } from './storage';
+import { importProject, pickScreenplayFile, saveProject } from './storage';
+import type { ImportedScreenplay } from './model/screenplayImport';
+import { parseScreenplay } from './model/screenplayImport';
+import {
+  appendEpisode,
+  projectFromImport,
+  replaceEpisode,
+} from './model/screenplayMerge';
+import ImportModal, { type ImportTarget } from './library/ImportModal';
 import {
   discardRecovery,
   isFileBased,
@@ -96,6 +104,12 @@ function Shell() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [recents, setRecents] = useState<RecentProject[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
+  const screenplayInput = useRef<HTMLInputElement>(null);
+  const [pendingImport, setPendingImport] = useState<{
+    filename: string;
+    imported: ImportedScreenplay;
+  } | null>(null);
+  const [importReport, setImportReport] = useState<Record<string, number> | null>(null);
 
   const refreshRecents = useCallback(() => {
     void listRecents().then(setRecents);
@@ -139,13 +153,45 @@ function Shell() {
     [openProject]
   );
 
+  /** Parses immediately so the target dialog can report what was actually
+   * found — and so a file that isn't a screenplay fails before the writer has
+   * chosen where to put it. */
+  const stageScreenplay = useCallback(
+    (name: string, text: string) => {
+      try {
+        const parsed = parseScreenplay(name, text);
+        if (parsed.elements.length === 0) {
+          window.alert(t.importEmpty);
+          return;
+        }
+        setPendingImport({ filename: name, imported: parsed });
+      } catch {
+        window.alert(t.importFailed);
+      }
+    },
+    [t]
+  );
+
+  /** Native picker on the desktop, file input in the browser — the same split
+   * as openFromFile, for the same reason. */
+  const importScreenplay = useCallback(() => {
+    if (!isFileBased) {
+      screenplayInput.current?.click();
+      return;
+    }
+    void pickScreenplayFile().then((file) => {
+      if (file) stageScreenplay(file.name, file.text);
+    });
+  }, [stageScreenplay]);
+
   const shellActions = useMemo<ShellActions>(
     () => ({
       openProjectDialog,
       openFromFile,
+      importScreenplay,
       showShortcuts: () => setShortcutsOpen(true),
     }),
-    [openProjectDialog, openFromFile]
+    [openProjectDialog, openFromFile, importScreenplay]
   );
 
   const commandContext = useMemo<CommandContext>(
@@ -240,6 +286,26 @@ function Shell() {
       .catch(() => window.alert(t.importError));
   }
 
+  function handleScreenplayFile(file: File) {
+    void file.text().then((text) => stageScreenplay(file.name, text));
+  }
+
+  async function applyImport(target: ImportTarget) {
+    if (!pendingImport) return;
+    const { imported } = pendingImport;
+    const project =
+      target.kind === 'new'
+        ? projectFromImport(imported, target.name)
+        : target.kind === 'append'
+          ? appendEpisode(target.project, imported, target.episodeName)
+          : replaceEpisode(target.project, imported, target.scriptId);
+
+    await saveProject(project);
+    setPendingImport(null);
+    setImportReport(imported.dropped);
+    openProject(project.id, { title: project.name, kind: project.kind });
+  }
+
   return (
     <ShellActionsProvider value={shellActions}>
       <div className="app-shell">
@@ -274,6 +340,45 @@ function Shell() {
 
       <RecoveryModal onOpenProject={openProject} />
 
+      {pendingImport && (
+        <ImportModal
+          filename={pendingImport.filename}
+          imported={pendingImport.imported}
+          onCancel={() => setPendingImport(null)}
+          onConfirm={(target) => void applyImport(target)}
+        />
+      )}
+
+      {importReport && Object.keys(importReport).length > 0 && (
+        <div className="modal-backdrop" onMouseDown={() => setImportReport(null)}>
+          <div
+            className="modal modal-narrow"
+            role="dialog"
+            aria-modal="true"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <h2 className="modal-title">{t.importDroppedTitle}</h2>
+            <p className="modal-text">{t.importDroppedIntro}</p>
+            <ul className="modal-list import-dropped">
+              {Object.entries(importReport).map(([type, count]) => (
+                <li key={type}>
+                  {type} × {count}
+                </li>
+              ))}
+            </ul>
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setImportReport(null)}
+              >
+                {t.close}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <input
         ref={fileInput}
         type="file"
@@ -282,6 +387,18 @@ function Shell() {
         onChange={(e) => {
           const file = e.target.files?.[0];
           if (file) handleImportFile(file);
+          e.target.value = '';
+        }}
+      />
+
+      <input
+        ref={screenplayInput}
+        type="file"
+        accept=".fountain,.fdx,.txt,.spmd"
+        hidden
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleScreenplayFile(file);
           e.target.value = '';
         }}
       />
