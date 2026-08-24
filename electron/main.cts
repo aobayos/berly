@@ -9,9 +9,16 @@ import {
   type MenuItemConstructorOptions,
 } from 'electron';
 import path from 'node:path';
+import fs from 'node:fs';
 import { migrate } from '../src/model/projectMigrate';
 import { newId } from '../src/model/types';
-import type { DocumentInfo, Project, ProjectMeta, RecoveryInfo } from '../src/model/types';
+import type {
+  DocumentInfo,
+  ImportedFile,
+  Project,
+  ProjectMeta,
+  RecoveryInfo,
+} from '../src/model/types';
 import { writeScreenplayPdf } from './screenplayPdf';
 import {
   addRecent,
@@ -42,6 +49,12 @@ const isMac = process.platform === 'darwin';
 
 const FILE_FILTERS = [
   { name: 'BERLY project', extensions: [DOCUMENT_EXTENSION, 'json'] },
+];
+
+const SCREENPLAY_FILTERS = [
+  { name: 'Screenplay', extensions: ['fountain', 'fdx', 'txt', 'spmd'] },
+  { name: 'Fountain', extensions: ['fountain', 'spmd', 'txt'] },
+  { name: 'Final Draft', extensions: ['fdx'] },
 ];
 
 function meta(project: Project): ProjectMeta {
@@ -143,6 +156,25 @@ ipcMain.handle(
   'doc:openPath',
   (_e, filePath: string): DocumentInfo | null => adopt(filePath)
 );
+
+// Hands the renderer the raw text and lets it parse: the Fountain and FDX
+// modules live in src/model and are not part of the main process's program.
+ipcMain.handle('doc:pickScreenplay', async (e): Promise<ImportedFile | null> => {
+  const win = senderWindow(e);
+  const { canceled, filePaths } = await dialog.showOpenDialog(win!, {
+    properties: ['openFile'],
+    filters: SCREENPLAY_FILTERS,
+  });
+  if (canceled || filePaths.length === 0) return null;
+  try {
+    return {
+      name: path.basename(filePaths[0]),
+      text: fs.readFileSync(filePaths[0], 'utf8'),
+    };
+  } catch {
+    return null;
+  }
+});
 
 ipcMain.handle('doc:info', (_e, id: string): DocumentInfo | null => {
   const filePath = documentPath(id);

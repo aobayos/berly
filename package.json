@@ -40,6 +40,7 @@
 		"@dnd-kit/sortable": "^10.0.0",
 		"@dnd-kit/utilities": "^3.2.2",
 		"@phosphor-icons/react": "^2.1.10",
+		"fountain-js": "^1.2.4",
 		"pdfkit": "^0.19.1",
 		"react": "^19.2.7",
 		"react-dom": "^19.2.7",

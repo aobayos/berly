@@ -1298,6 +1298,64 @@ a:focus-visible,
   gap: 8px;
 }
 
+/* ---------- Screenplay import ---------- */
+
+.import-summary {
+  font-size: 13px;
+}
+
+.import-modes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.import-modes label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.field input,
+.field select {
+  padding: 8px 10px;
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+}
+
+.import-note {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 14px;
+}
+
+.import-warning {
+  font-size: 13px;
+  color: var(--accent);
+  margin-bottom: 14px;
+}
+
+.import-dropped {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
 .open-search {
   width: 100%;
   padding: 10px 12px;

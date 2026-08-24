@@ -126,6 +126,12 @@ export interface RecoveryInfo {
 
 /** Shape shared by every persistence backend (localStorage on the web,
  * Electron IPC on desktop) — see src/storage/index.ts and electron/preload.cts. */
+/** A screenplay file the writer picked, before anything has parsed it. */
+export interface ImportedFile {
+  name: string;
+  text: string;
+}
+
 export interface StorageBackend {
   listProjects(): Promise<ProjectMeta[]>;
   loadProject(id: string): Promise<Project | null>;
@@ -151,6 +157,12 @@ export interface StorageBackend {
   saveDocumentAs?(project: Project): Promise<DocumentInfo | null>;
   /** The file backing an open project, or null while it is still untitled. */
   documentInfo?(id: string): Promise<DocumentInfo | null>;
+
+  /** Native picker for a screenplay to import (.fountain/.fdx). Returns the
+   * file's name and text rather than a Project — parsing belongs in the
+   * renderer, where the format modules live. Null when cancelled.
+   * The browser build has no equivalent; App.tsx uses a file input there. */
+  pickScreenplay?(): Promise<ImportedFile | null>;
 
   /** Background copy of in-progress work; cheap enough to call on a timer. */
   writeRecovery?(project: Project): Promise<void>;
