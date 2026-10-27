@@ -31,6 +31,11 @@ export interface DocumentState {
 const open = new Map<string, DocumentState>();
 const listeners = new Set<() => void>();
 
+/** Editors hold their latest keystrokes back until a debounce fires; anything
+ * about to read or change a project from outside asks them to hand those over
+ * first, so it never builds on a copy that's a few keystrokes old. */
+const flushers = new Map<string, Set<() => void>>();
+
 function emit(): void {
   for (const listener of listeners) listener();
 }
@@ -64,6 +69,28 @@ export async function openDocument(id: string): Promise<Project | null> {
   const info = await backend.documentInfo?.(id);
   set(id, { project, path: info?.path ?? null, dirty: false });
   return project;
+}
+
+/** Lets a mounted editor publish its pending edits on demand. Returns the
+ * unregister function, for an effect cleanup. */
+export function registerFlush(id: string, flush: () => void): () => void {
+  const set = flushers.get(id) ?? new Set();
+  set.add(flush);
+  flushers.set(id, set);
+  return () => set.delete(flush);
+}
+
+function flush(id: string): void {
+  flushers.get(id)?.forEach((fn) => fn());
+}
+
+/** The project as the writer currently sees it: the open copy, unsaved edits
+ * included, when it's open in a tab, and storage otherwise. Anything that
+ * edits a project outside the editor must read through this — reading
+ * storage directly hands back a copy the open document has moved past. */
+export async function currentProject(id: string): Promise<Project | null> {
+  flush(id);
+  return open.get(id)?.project ?? loadProject(id);
 }
 
 export function documentState(id: string): DocumentState | undefined {
@@ -104,6 +131,20 @@ export function updateDocument(project: Project): void {
     path: existing?.path ?? null,
     dirty: true,
   });
+}
+
+/** Applies a change made outside the editor — episodes added, renamed or
+ * removed, a screenplay imported into a show. An open project takes it the
+ * way it takes an editor's edits (dirty on the desktop, saved at once in the
+ * browser), so the open copy and the file can't drift apart; a project that
+ * isn't open goes straight to storage. */
+export async function commitProject(project: Project): Promise<void> {
+  if (!open.has(project.id)) {
+    await saveProject(project);
+    return;
+  }
+  updateDocument(project);
+  writeDraft(project.id);
 }
 
 /** What the editor's autosave timer fires. On the desktop that's the recovery

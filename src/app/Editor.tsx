@@ -20,6 +20,7 @@ import { downloadFile, exportPdf } from '@/services/storage';
 import {
   isFileBased,
   openDocument,
+  registerFlush,
   saveDocument,
   saveDocumentAs,
   updateDocument,
@@ -64,11 +65,15 @@ export default function Editor() {
   // remounts on every route change (switching episodes), and unsaved edits
   // live only in memory until the writer saves.
   const doc = useDocument(projectId);
+  // Every copy of the project this editor has loaded or published. Anything
+  // else showing up in the store was changed from outside and gets adopted.
+  const ownCopies = useRef(new WeakSet<Project>());
 
   useEffect(() => {
     let cancelled = false;
     openDocument(projectId).then((p) => {
       if (cancelled) return;
+      if (p) ownCopies.current.add(p);
       setProject(p);
       setLoading(false);
     });
@@ -94,8 +99,22 @@ export default function Editor() {
   const publish = useCallback(() => {
     if (!projectRef.current || !dirty.current) return;
     dirty.current = false;
+    ownCopies.current.add(projectRef.current);
     updateDocument(projectRef.current);
   }, []);
+
+  // Hands pending keystrokes over when something outside the editor is about
+  // to read or change this project (the episode list, an import).
+  useEffect(() => registerFlush(projectId, publish), [projectId, publish]);
+
+  // ...and takes those outside changes in. Comparing against projectRef
+  // instead would mistake our own slightly older publish for a foreign copy
+  // whenever it lands in the same render as a keystroke, and revert it.
+  useEffect(() => {
+    if (!doc || ownCopies.current.has(doc.project)) return;
+    ownCopies.current.add(doc.project);
+    setProject(doc.project);
+  }, [doc]);
 
   /** The debounced write. On the desktop this is the recovery copy only: the
    * .berly file is the writer's to save, so it stays untouched until Ctrl+S.

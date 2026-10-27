@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { loadProject, saveProject } from '@/services/storage';
+import { commitProject, openDocument, useDocument } from '@/services/storage/documents';
 import type { Project } from '@/model/types';
 import { newScript } from '@/model/types';
 import { useI18n } from '@/i18n';
@@ -11,14 +11,17 @@ export default function EpisodeList() {
   const { projectId = '' } = useParams();
   const navigate = useNavigate();
   const { t, lang } = useI18n();
-  const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
+  const [missing, setMissing] = useState(false);
+  // The open document, not storage: the editor writes there, and episodes
+  // added here have to be visible to it the moment it mounts.
+  const project: Project | null = useDocument(projectId)?.project ?? null;
 
   useEffect(() => {
     let cancelled = false;
-    loadProject(projectId).then((p) => {
+    openDocument(projectId).then((p) => {
       if (cancelled) return;
-      setProject(p);
+      setMissing(!p);
       setLoading(false);
     });
     return () => {
@@ -28,7 +31,7 @@ export default function EpisodeList() {
 
   if (loading) return null;
 
-  if (!project) {
+  if (missing || !project) {
     return (
       <div className="home">
         <p className="home-empty">{t.notFound}</p>
@@ -49,8 +52,7 @@ export default function EpisodeList() {
     if (!project) return;
     const next = { ...project, scripts: [...project.scripts], updatedAt: Date.now() };
     fn(next);
-    saveProject(next);
-    setProject(next);
+    void commitProject(next);
   }
 
   function handleNewEpisode() {
