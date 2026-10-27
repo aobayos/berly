@@ -7,6 +7,7 @@ import OpenProjectModal, { type OpenMode } from '@/components/modals/OpenProject
 import ShortcutsModal from '@/components/modals/ShortcutsModal';
 import { useI18n } from '@/i18n';
 import { useTabs } from '@/contexts/tabs';
+import { useAddressBar } from '@/contexts/addressBar';
 import {
   ShellActionsProvider,
   useCommands,
@@ -24,6 +25,7 @@ import {
   onRequestClose,
   setWindowUnsaved,
   takePendingPaths,
+  isDesktop,
 } from '@/desktop/bridge';
 import { importProject, pickScreenplayFile } from '@/services/storage';
 import type { ImportedScreenplay } from '@/services/screenplayImport';
@@ -51,6 +53,8 @@ export default function Shell() {
   const { t } = useI18n();
   const { openProject } = useTabs();
   const guard = useUnsavedGuard();
+  // The desktop window has no address bar to keep in step.
+  useAddressBar(!isDesktop);
   const [openModal, setOpenModal] = useState<OpenMode | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [recents, setRecents] = useState<RecentProject[]>([]);
@@ -264,7 +268,7 @@ export default function Shell() {
         <TabBar onNewTab={() => openProjectDialog('open')} />
         <div className="app-body">
           <Workspace
-            empty={
+            home={
               <ProjectList
                 onOpenProject={(id, meta) => openProject(id, meta)}
                 onImportClick={() => fileInput.current?.click()}

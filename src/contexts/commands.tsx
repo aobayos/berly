@@ -260,7 +260,8 @@ export function useCommands(ctx: CommandContext): Command[] {
         label: t.menuNextTab,
         accelerator: 'Ctrl+Tab',
         group: 'tabs',
-        enabled: tabs.tabs.length > 1,
+        // Home counts: one project tab is already two stops.
+        enabled: tabs.tabs.length > 0,
         run: () => tabs.cycle(1),
       },
       {
@@ -268,7 +269,8 @@ export function useCommands(ctx: CommandContext): Command[] {
         label: t.menuPrevTab,
         accelerator: 'Ctrl+Shift+Tab',
         group: 'tabs',
-        enabled: tabs.tabs.length > 1,
+        // Home counts: one project tab is already two stops.
+        enabled: tabs.tabs.length > 0,
         run: () => tabs.cycle(-1),
       },
       {

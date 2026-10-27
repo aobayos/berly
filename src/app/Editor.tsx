@@ -38,7 +38,7 @@ import TitlePageView from '@/components/editor/TitlePageView';
 import BibleView from '@/app/BibleView';
 import { createHistory, pushHistory, undo, redo, type HistoryStack } from '@/services/history';
 import { reorderScenes } from '@/services/sceneBlocks';
-import { useIsActiveTab } from '@/contexts/tabs';
+import { useIsActiveTab, useTabs } from '@/contexts/tabs';
 import { useRegisterEditorCommands } from '@/contexts/commands';
 
 const AUTOSAVE_DELAY = 1500;
@@ -49,6 +49,7 @@ export default function Editor() {
   const navigate = useNavigate();
   const { t, lang, setLang } = useI18n();
   const isActiveTab = useIsActiveTab();
+  const { activate } = useTabs();
 
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
@@ -599,9 +600,9 @@ export default function Editor() {
         <button
           type="button"
           className="btn btn-primary"
-          onClick={() => navigate('/')}
+          onClick={() => activate(null)}
         >
-          {t.backToProjects}
+          {t.home}
         </button>
       </div>
     );
@@ -609,19 +610,22 @@ export default function Editor() {
 
   const isShow = project.kind === 'show';
 
+  // Only a show has somewhere to go back to inside its tab — the episode
+  // list. Home is a tab of its own, as in Figma, so a movie has no back.
   function handleBack() {
     flushDraft();
-    // A movie has no episode list above it, so it goes straight home.
-    navigate(isShow ? `/project/${projectId}` : '/');
+    navigate(`/project/${projectId}`);
   }
 
   return (
     <div className="editor">
       <header className="toolbar">
         <div className="toolbar-group">
-          <button type="button" className="btn btn-ghost" onClick={handleBack}>
-            ← {isShow ? t.backToEpisodes : t.backToProjects}
-          </button>
+          {isShow && (
+            <button type="button" className="btn btn-ghost" onClick={handleBack}>
+              ← {t.backToEpisodes}
+            </button>
+          )}
           <span className="toolbar-project-name">
             {project.name}
             {isShow ? ` · ${script.name}` : ''}
