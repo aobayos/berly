@@ -4,6 +4,7 @@ import { commitProject, openDocument, useDocument } from '@/services/storage/doc
 import type { Project } from '@/model/types';
 import { newScript } from '@/model/types';
 import { useI18n } from '@/i18n';
+import { useTabs } from '@/contexts/tabs';
 
 /** Landing page for a project: movies go straight to their single script;
  * shows display the episode list. */
@@ -11,6 +12,7 @@ export default function EpisodeList() {
   const { projectId = '' } = useParams();
   const navigate = useNavigate();
   const { t, lang } = useI18n();
+  const { activate } = useTabs();
   const [loading, setLoading] = useState(true);
   const [missing, setMissing] = useState(false);
   // The open document, not storage: the editor writes there, and episodes
@@ -35,8 +37,8 @@ export default function EpisodeList() {
     return (
       <div className="home">
         <p className="home-empty">{t.notFound}</p>
-        <button type="button" className="btn btn-primary" onClick={() => navigate('/')}>
-          {t.backToProjects}
+        <button type="button" className="btn btn-primary" onClick={() => activate(null)}>
+          {t.home}
         </button>
       </div>
     );
@@ -90,9 +92,6 @@ export default function EpisodeList() {
     <div className="home">
       <header className="home-header">
         <div>
-          <button type="button" className="btn btn-ghost" onClick={() => navigate('/')}>
-            ← {t.backToProjects}
-          </button>
           <h1 className="home-title">
             {project.name} <span className="badge">{t.show}</span>
           </h1>

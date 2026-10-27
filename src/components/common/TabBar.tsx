@@ -1,6 +1,8 @@
-// VS Code-style strip of open projects. One tab per project; the panes
-// behind them all stay mounted (see Workspace.tsx).
+// Figma-style tab strip: a Home tab that is always first and can't be closed
+// or moved, then one tab per open project. The panes behind them all stay
+// mounted (see Workspace.tsx).
 import { useState } from 'react';
+import { House } from '@phosphor-icons/react';
 import KindIcon from '@/components/ui/KindIcon';
 import { useContextMenu } from '@/contexts/contextMenu';
 import { useDocument } from '@/services/storage/documents';
@@ -15,10 +17,22 @@ export default function TabBar({ onNewTab }: { onNewTab: () => void }) {
   const [dragging, setDragging] = useState<string | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
 
-  if (tabs.length === 0) return null;
-
   return (
     <div className="tabbar" role="tablist">
+      <div
+        role="tab"
+        aria-selected={activeId === null}
+        aria-label={t.home}
+        title={t.home}
+        tabIndex={-1}
+        className={`tab tab-home ${activeId === null ? 'is-active' : ''}`}
+        onPointerDown={(e) => {
+          if (e.button === 0) activate(null);
+        }}
+      >
+        <House size={17} weight={activeId === null ? 'fill' : 'regular'} aria-hidden />
+      </div>
+
       {tabs.map((tab, i) => (
         <div
           key={tab.id}

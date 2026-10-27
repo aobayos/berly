@@ -43,7 +43,7 @@ const en = {
   newEpisode: 'New Episode',
   defaultEpisodeName: 'Episode',
   deleteEpisodeConfirm: 'Delete this episode? This cannot be undone.',
-  backToProjects: 'Projects',
+  home: 'Home',
   renameEpisode: 'Rename',
   renamePrompt: 'New name:',
 
@@ -298,7 +298,7 @@ const fr: Dict = {
   newEpisode: 'Nouvel épisode',
   defaultEpisodeName: 'Épisode',
   deleteEpisodeConfirm: 'Supprimer cet épisode ? Cette action est irréversible.',
-  backToProjects: 'Projets',
+  home: 'Accueil',
   renameEpisode: 'Renommer',
   renamePrompt: 'Nouveau nom :',
 

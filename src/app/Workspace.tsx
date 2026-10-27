@@ -1,8 +1,8 @@
-// Renders every open tab at once — each in its own MemoryRouter — and hides
-// all but the active one with CSS. Keeping the panes mounted is the whole
-// point: switching tabs preserves caret position, undo history and pending
-// autosaves, which a remount would throw away.
-import { useEffect } from 'react';
+// Renders Home and every open tab at once — each project tab in its own
+// MemoryRouter — and hides all but the active one with CSS. Keeping the panes
+// mounted is the whole point: switching tabs preserves caret position, undo
+// history and pending autosaves, which a remount would throw away.
+import { useEffect, useRef, type ReactNode } from 'react';
 import {
   MemoryRouter,
   Navigate,
@@ -10,12 +10,11 @@ import {
   Routes,
   useLocation,
   useNavigate,
+  useNavigationType,
   useParams,
 } from 'react-router-dom';
 import Editor from '@/app/Editor';
 import EpisodeList from '@/app/EpisodeList';
-import ProjectList from '@/app/ProjectList';
-import { useShellActions } from '@/contexts/commands';
 import { ActiveTabProvider, useTabs, type Tab } from '@/contexts/tabs';
 
 /** Remounts the editor when the target script changes. */
@@ -24,43 +23,35 @@ function EditorRoute() {
   return <Editor key={`${projectId}/${scriptId}`} />;
 }
 
-/** Mirrors this tab's route back into the session so it survives a restart. */
-function RouteSync({ tabId }: { tabId: string }) {
+/** Mirrors this tab's route back into the session so it survives a restart
+ * (and reaches the address bar), and follows the route the other way when
+ * the address bar asks for one. */
+function RouteSync({ tab }: { tab: Tab }) {
   const location = useLocation();
-  const { setTabPath } = useTabs();
-  useEffect(() => {
-    setTabPath(tabId, location.pathname);
-  }, [tabId, location.pathname, setTabPath]);
-  return null;
-}
-
-/** The project list, reached by going Back out of a project. Picking a
- * project here re-points this tab rather than opening another one — the tab
- * behaves like a browser tab that navigated home. */
-function TabHome({ tab }: { tab: Tab }) {
+  const navigationType = useNavigationType();
   const navigate = useNavigate();
-  const { tabs, setTabProject, openProject, activate } = useTabs();
-  const { openFromFile } = useShellActions();
+  const { setTabPath } = useTabs();
 
-  return (
-    <ProjectList
-      onOpenProject={(id, meta) => {
-        if (meta?.background) {
-          openProject(id, meta);
-          return;
-        }
-        // Already open elsewhere? Go to that tab instead of duplicating it.
-        const existing = tabs.find((t) => t.projectId === id && t.id !== tab.id);
-        if (existing) {
-          activate(existing.id);
-          return;
-        }
-        setTabProject(tab.id, id, meta);
-        navigate(`/project/${id}`);
-      }}
-      onImportClick={openFromFile}
-    />
-  );
+  useEffect(() => {
+    setTabPath(
+      tab.id,
+      location.pathname,
+      navigationType === 'REPLACE' ? 'replace' : 'push'
+    );
+  }, [tab.id, location.pathname, navigationType, setTabPath]);
+
+  // Keyed on navSeq alone: tab.path also changes every time the router moves
+  // by itself, and following that would be a loop. A request made before
+  // this router existed is already its initial entry.
+  const handledNav = useRef(tab.navSeq);
+  useEffect(() => {
+    if (tab.navSeq === handledNav.current) return;
+    handledNav.current = tab.navSeq;
+    navigate(tab.path);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab.navSeq]);
+
+  return null;
 }
 
 function TabPane({ tab, active }: { tab: Tab; active: boolean }) {
@@ -68,9 +59,8 @@ function TabPane({ tab, active }: { tab: Tab; active: boolean }) {
     <div className={`tab-pane ${active ? '' : 'is-inactive'}`}>
       <ActiveTabProvider value={active}>
         <MemoryRouter initialEntries={[tab.path]}>
-          <RouteSync tabId={tab.id} />
+          <RouteSync tab={tab} />
           <Routes>
-            <Route path="/" element={<TabHome tab={tab} />} />
             <Route path="/project/:projectId" element={<EpisodeList />} />
             <Route
               path="/project/:projectId/script/:scriptId"
@@ -87,13 +77,15 @@ function TabPane({ tab, active }: { tab: Tab; active: boolean }) {
   );
 }
 
-export default function Workspace({ empty }: { empty: React.ReactNode }) {
+/** `home` is what the Home tab shows — the project list. */
+export default function Workspace({ home }: { home: ReactNode }) {
   const { tabs, activeId } = useTabs();
-
-  if (tabs.length === 0) return <>{empty}</>;
 
   return (
     <>
+      <div className={`tab-pane ${activeId === null ? '' : 'is-inactive'}`}>
+        <ActiveTabProvider value={activeId === null}>{home}</ActiveTabProvider>
+      </div>
       {tabs.map((tab) => (
         <TabPane key={tab.id} tab={tab} active={tab.id === activeId} />
       ))}

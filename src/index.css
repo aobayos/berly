@@ -1089,14 +1089,17 @@ a:focus-visible,
   color: #fff;
 }
 
-/* ---------- Tab strip ---------- */
+/* ---------- Tab strip ----------
+   After Figma's: no accent line — the active tab takes the page's colour and
+   reads as part of it, the others sit on the darker strip with a hairline
+   between them. Home is a square icon tab that never moves. */
 
 .tabbar {
   display: flex;
   align-items: stretch;
-  height: 36px;
+  height: 38px;
   flex: none;
-  background: var(--bg);
+  background: var(--bg-panel);
   border-bottom: 1px solid var(--border);
   overflow-x: auto;
   scrollbar-width: none;
@@ -1109,29 +1112,49 @@ a:focus-visible,
 
 .tab {
   -webkit-app-region: no-drag;
+  position: relative;
   display: flex;
   align-items: center;
   gap: 7px;
   padding: 0 8px 0 12px;
-  max-width: 220px;
-  min-width: 0;
-  background: var(--bg-panel);
-  border-right: 1px solid var(--border);
-  border-top: 2px solid transparent;
+  flex: 0 1 200px;
+  min-width: 90px;
   color: var(--text-dim);
   font-size: 13px;
   cursor: pointer;
   user-select: none;
 }
 
+/* Hairline between two inactive tabs; none next to the active one. */
+.tab + .tab:not(.is-active)::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 1px;
+  background: var(--border);
+}
+
+.tab.is-active + .tab::before {
+  display: none;
+}
+
 .tab:hover {
-  background: var(--bg-hover);
+  color: var(--text);
 }
 
 .tab.is-active {
   background: var(--bg);
-  border-top-color: var(--accent);
   color: var(--text);
+}
+
+.tab-home {
+  flex: none;
+  min-width: 0;
+  width: 44px;
+  padding: 0;
+  justify-content: center;
 }
 
 .tab.is-dragging {
@@ -1142,19 +1165,32 @@ a:focus-visible,
   box-shadow: inset 2px 0 0 var(--accent);
 }
 
+/* Icon, title and close button are centred on their own boxes rather than
+   sitting on a text baseline, which left the SVG icon and the glyph-based
+   close mark at different heights from the title. */
 .tab-icon {
-  font-size: 12px;
+  display: flex;
+  align-items: center;
   flex: none;
 }
 
+/* Takes the slack in a tab wider than its title, which is what pushes the
+   close button to the far end. */
 .tab-title {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 1;
 }
 
 .tab-close {
   flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border: none;
   background: transparent;
   color: inherit;

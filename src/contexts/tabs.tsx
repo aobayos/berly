@@ -1,6 +1,8 @@
-// Open-project tabs. A tab is one project; each gets its own router (see
-// Workspace.tsx), and every open tab stays mounted so switching away and
-// back preserves editor state — caret, undo history, pending autosave.
+// Open-project tabs, after Figma's: a Home tab that is always there and can't
+// be closed, then one tab per open project. A project tab never leaves its
+// project — Home is one click away on the strip instead. Each project tab gets
+// its own router (see Workspace.tsx), and every one stays mounted so switching
+// away and back preserves editor state — caret, undo history, pending autosave.
 import {
   createContext,
   useCallback,
@@ -26,6 +28,13 @@ export interface Tab {
   kind: ProjectKind;
   /** Current route within this tab's own router. */
   path: string;
+  /** How the router last got to `path`. A redirect (a movie jumping
+   * straight to its script) is a replace, and the address bar must not add a
+   * Back step for it. */
+  lastNav?: 'push' | 'replace';
+  /** Bumped when something outside the tab's router — the address bar —
+   * asks it to go to `path`. */
+  navSeq?: number;
 }
 
 export interface TabMeta {
@@ -36,25 +45,26 @@ export interface TabMeta {
 interface OpenOptions extends TabMeta {
   /** Open without stealing focus from the current tab. */
   background?: boolean;
+  /** Where in the project to land; its front page when omitted. */
+  path?: string;
 }
 
 interface TabsValue {
   tabs: Tab[];
+  /** null while Home is the active tab. */
   activeId: string | null;
   activeTab: Tab | null;
   openProject(projectId: string, options?: OpenOptions): void;
   closeTab(id: string): void;
   closeOthers(id: string): void;
   closeAll(): void;
-  /** Re-points an existing tab at a different project — what picking a
-   * project from the in-tab home page does. */
-  setTabProject(id: string, projectId: string, meta?: TabMeta): void;
-  activate(id: string): void;
-  /** Moves +1/-1 through the strip, wrapping at both ends. */
+  /** null activates Home. */
+  activate(id: string | null): void;
+  /** Moves +1/-1 through the strip, Home included, wrapping at both ends. */
   cycle(delta: 1 | -1): void;
   activateIndex(index: number): void;
   moveTab(id: string, toIndex: number): void;
-  setTabPath(id: string, path: string): void;
+  setTabPath(id: string, path: string, how: 'push' | 'replace'): void;
 }
 
 const TabsContext = createContext<TabsValue | null>(null);
@@ -92,7 +102,7 @@ function loadSession(): Session {
     );
     const activeId = tabs.some((t) => t.id === raw.activeId)
       ? (raw.activeId as string)
-      : (tabs[0]?.id ?? null);
+      : null;
     return { tabs, activeId };
   } catch {
     return { tabs: [], activeId: null };
@@ -137,9 +147,7 @@ export function TabsProvider({ children }: { children: ReactNode }) {
           });
         return {
           tabs: next,
-          activeId: next.some((t) => t.id === s.activeId)
-            ? s.activeId
-            : (next[0]?.id ?? null),
+          activeId: next.some((t) => t.id === s.activeId) ? s.activeId : null,
         };
       });
     });
@@ -168,41 +176,32 @@ export function TabsProvider({ children }: { children: ReactNode }) {
         // the way VS Code and the JetBrains IDEs both behave.
         const existing = s.tabs.find((t) => t.projectId === projectId);
         if (existing) {
-          return options.background ? s : { ...s, activeId: existing.id };
+          const { path } = options;
+          const tabs =
+            path && path !== existing.path
+              ? s.tabs.map((t) =>
+                  t.id === existing.id
+                    ? { ...t, path, navSeq: (t.navSeq ?? 0) + 1 }
+                    : t
+                )
+              : s.tabs;
+          return {
+            tabs,
+            activeId: options.background ? s.activeId : existing.id,
+          };
         }
         const tab: Tab = {
           id: newId(),
           projectId,
           title: options.title ?? '',
           kind: options.kind ?? 'movie',
-          path: `/project/${projectId}`,
+          path: options.path ?? `/project/${projectId}`,
         };
         return {
           tabs: [...s.tabs, tab],
           activeId: options.background ? s.activeId : tab.id,
         };
       });
-      hydrate(projectId);
-    },
-    [hydrate]
-  );
-
-  const setTabProject = useCallback(
-    (id: string, projectId: string, meta: TabMeta = {}) => {
-      setSession((s) => ({
-        ...s,
-        tabs: s.tabs.map((t) =>
-          t.id === id
-            ? {
-                ...t,
-                projectId,
-                title: meta.title ?? '',
-                kind: meta.kind ?? t.kind,
-                path: `/project/${projectId}`,
-              }
-            : t
-        ),
-      }));
       hydrate(projectId);
     },
     [hydrate]
@@ -276,16 +275,17 @@ export function TabsProvider({ children }: { children: ReactNode }) {
   }, [tabs, releaseTabs]);
 
   const activate = useCallback(
-    (id: string) => setSession((s) => ({ ...s, activeId: id })),
+    (id: string | null) => setSession((s) => ({ ...s, activeId: id })),
     []
   );
 
   const cycle = useCallback((delta: 1 | -1) => {
     setSession((s) => {
-      if (s.tabs.length < 2) return s;
-      const i = s.tabs.findIndex((t) => t.id === s.activeId);
-      const next = (i + delta + s.tabs.length) % s.tabs.length;
-      return { ...s, activeId: s.tabs[next].id };
+      if (s.tabs.length === 0) return s;
+      // Home sits in front of the project tabs.
+      const order = [null, ...s.tabs.map((t) => t.id)];
+      const i = order.indexOf(s.activeId);
+      return { ...s, activeId: order[(i + delta + order.length) % order.length] };
     });
   }, []);
 
@@ -309,16 +309,21 @@ export function TabsProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const setTabPath = useCallback((id: string, path: string) => {
-    setSession((s) => {
-      const tab = s.tabs.find((t) => t.id === id);
-      if (!tab || tab.path === path) return s;
-      return {
-        ...s,
-        tabs: s.tabs.map((t) => (t.id === id ? { ...t, path } : t)),
-      };
-    });
-  }, []);
+  const setTabPath = useCallback(
+    (id: string, path: string, how: 'push' | 'replace') => {
+      setSession((s) => {
+        const tab = s.tabs.find((t) => t.id === id);
+        if (!tab || tab.path === path) return s;
+        return {
+          ...s,
+          tabs: s.tabs.map((t) =>
+            t.id === id ? { ...t, path, lastNav: how } : t
+          ),
+        };
+      });
+    },
+    []
+  );
 
   const value = useMemo<TabsValue>(
     () => ({
@@ -329,7 +334,6 @@ export function TabsProvider({ children }: { children: ReactNode }) {
       closeTab,
       closeOthers,
       closeAll,
-      setTabProject,
       activate,
       cycle,
       activateIndex,
@@ -343,7 +347,6 @@ export function TabsProvider({ children }: { children: ReactNode }) {
       closeTab,
       closeOthers,
       closeAll,
-      setTabProject,
       activate,
       cycle,
       activateIndex,
