@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -8,4 +9,9 @@ export default defineConfig({
   // blank window. Must stay relative.
   base: './',
   plugins: [react()],
+  // Mirrors "paths" in tsconfig.app.json. Renderer only: the Electron program
+  // compiles a few src/ files with plain tsc, which doesn't rewrite aliases.
+  resolve: {
+    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+  },
 })

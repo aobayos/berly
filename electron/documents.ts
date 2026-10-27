@@ -14,7 +14,7 @@
 import { app } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
-import { migrate } from '../src/model/projectMigrate';
+import { migrate } from '../src/services/projectMigrate';
 import type { Project } from '../src/model/types';
 
 export const DOCUMENT_EXTENSION = 'berly';

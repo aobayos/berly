@@ -105,7 +105,7 @@ export interface ProjectMeta {
 
 /** A project that lives in a real file on disk. Desktop only: the browser
  * can't write to arbitrary paths, so the web build keeps the id-addressed
- * localStorage library instead (see src/storage/web.ts). */
+ * localStorage library instead (see src/services/storage/web.ts). */
 export interface DocumentInfo {
   id: string;
   /** Absolute path of the .berly file. */
@@ -125,7 +125,7 @@ export interface RecoveryInfo {
 }
 
 /** Shape shared by every persistence backend (localStorage on the web,
- * Electron IPC on desktop) — see src/storage/index.ts and electron/preload.cts. */
+ * Electron IPC on desktop) — see src/services/storage/index.ts and electron/preload.cts. */
 /** A screenplay file the writer picked, before anything has parsed it. */
 export interface ImportedFile {
   name: string;
@@ -144,7 +144,7 @@ export interface StorageBackend {
   exportPdf?(project: Project, scriptId: string, filename: string): Promise<void>;
 
   // ----- Document files: present only in the desktop build -----
-  // src/storage/documents.ts checks for openDocument to decide whether the running
+  // src/services/storage/documents.ts checks for openDocument to decide whether the running
   // build is file-based at all, so these travel as a group.
 
   /** Native open dialog. Null when the writer cancels or the file is junk. */

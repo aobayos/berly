@@ -3,7 +3,7 @@
 	"private": true,
 	"version": "0.0.1",
 	"description": "A bilingual screenwriting editor for film and television.",
-	"author": "Bayos",
+	"author": "aobayos",
 	"type": "module",
 	"main": "dist-electron/electron/main.cjs",
 	"scripts": {
@@ -46,7 +46,8 @@
 		"pdfkit": "^0.19.1",
 		"react": "^19.2.7",
 		"react-dom": "^19.2.7",
-		"react-router-dom": "^7.18.1"
+		"react-router-dom": "^7.18.1",
+		"secure-ls": "^2.0.0"
 	},
 	"devDependencies": {
 		"@types/node": "^24.13.2",
