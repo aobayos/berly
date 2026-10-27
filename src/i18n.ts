@@ -41,6 +41,7 @@ const en = {
 
   // Episode list
   newEpisode: 'New Episode',
+  importEpisode: 'Import Episode',
   defaultEpisodeName: 'Episode',
   deleteEpisodeConfirm: 'Delete this episode? This cannot be undone.',
   home: 'Home',
@@ -117,11 +118,12 @@ const en = {
   } satisfies Record<ElementType, string>,
 
   // Screenplay import
-  menuImportScreenplay: 'Import Screenplay…',
+  menuImport: 'Import…',
   importTitle: 'Import screenplay',
   importFrom: 'From',
   importFormatFountain: 'Fountain',
   importFormatFdx: 'Final Draft',
+  importFormatTrelby: 'Trelby',
   importScenesRead: 'scenes',
   importElementsRead: 'elements',
   importTargetNew: 'As a new project',
@@ -296,6 +298,7 @@ const fr: Dict = {
   episodes: 'épisodes',
 
   newEpisode: 'Nouvel épisode',
+  importEpisode: 'Importer un épisode',
   defaultEpisodeName: 'Épisode',
   deleteEpisodeConfirm: 'Supprimer cet épisode ? Cette action est irréversible.',
   home: 'Accueil',
@@ -366,11 +369,12 @@ const fr: Dict = {
   },
 
   // Import de scénario
-  menuImportScreenplay: 'Importer un scénario…',
+  menuImport: 'Importer…',
   importTitle: 'Importer un scénario',
   importFrom: 'Depuis',
   importFormatFountain: 'Fountain',
   importFormatFdx: 'Final Draft',
+  importFormatTrelby: 'Trelby',
   importScenesRead: 'scènes',
   importElementsRead: 'éléments',
   importTargetNew: 'Comme nouveau projet',

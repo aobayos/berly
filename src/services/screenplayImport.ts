@@ -3,8 +3,9 @@
 import type { ScriptElement, TitlePage } from '@/model/types';
 import { parseFountain } from '@/services/fountainParse';
 import { parseFdx } from '@/services/fdxParse';
+import { isTrelby, parseTrelby } from '@/services/trelbyParse';
 
-export type ScreenplayFormat = 'fountain' | 'fdx';
+export type ScreenplayFormat = 'fountain' | 'fdx' | 'trelby';
 
 export interface ImportedScreenplay {
   format: ScreenplayFormat;
@@ -22,16 +23,25 @@ export interface ImportedScreenplay {
  * something to hand to an XML parser. */
 export function detectFormat(filename: string, text: string): ScreenplayFormat {
   if (/^\s*<\?xml|<FinalDraft/i.test(text.slice(0, 500))) return 'fdx';
+  if (isTrelby(text)) return 'trelby';
   if (/\.fdx$/i.test(filename)) return 'fdx';
+  if (/\.trelby$/i.test(filename)) return 'trelby';
   return 'fountain';
 }
 
 export function parseScreenplay(filename: string, text: string): ImportedScreenplay {
-  return detectFormat(filename, text) === 'fdx' ? parseFdx(text) : parseFountain(text);
+  switch (detectFormat(filename, text)) {
+    case 'fdx':
+      return parseFdx(text);
+    case 'trelby':
+      return parseTrelby(text);
+    case 'fountain':
+      return parseFountain(text);
+  }
 }
 
 /** Strips the extension so an imported file suggests a project name. */
 export function nameFromFilename(filename: string): string {
-  const base = filename.replace(/^.*[\\/]/, '').replace(/\.(fountain|fdx|txt|spmd)$/i, '');
+  const base = filename.replace(/^.*[\\/]/, '').replace(/\.(fountain|fdx|trelby|txt|spmd)$/i, '');
   return base.trim();
 }

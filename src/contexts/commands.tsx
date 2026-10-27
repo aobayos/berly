@@ -101,15 +101,20 @@ export interface MenuSpec {
 export interface ShellActions {
   openProjectDialog(mode: 'open' | 'create'): void;
   openFromFile(): void;
-  /** Picks a .fountain/.fdx file and opens the import target dialog. */
-  importScreenplay(): void;
+  /** Picks a file to import: a BERLY project is copied in, a screenplay
+   * (Fountain, Final Draft, Trelby) goes to the import dialog. */
+  importFile(): void;
+  /** The same, started from a series: a screenplay can only become one of
+   * its episodes, so the dialog doesn't ask where it goes. */
+  importEpisode(showId: string): void;
   showShortcuts(): void;
 }
 
 const ShellActionsContext = createContext<ShellActions>({
   openProjectDialog: () => {},
   openFromFile: () => {},
-  importScreenplay: () => {},
+  importFile: () => {},
+  importEpisode: () => {},
   showShortcuts: () => {},
 });
 
@@ -159,11 +164,11 @@ export function useCommands(ctx: CommandContext): Command[] {
         run: ctx.openFromFile,
       },
       {
-        id: 'project.importScreenplay',
-        label: t.menuImportScreenplay,
+        id: 'project.import',
+        label: t.menuImport,
         group: 'project',
         enabled: true,
-        run: ctx.importScreenplay,
+        run: ctx.importFile,
       },
       {
         id: 'file.save',
@@ -340,8 +345,7 @@ export function useMenus(commands: Command[], ctx: CommandContext): MenuSpec[] {
           item('project.new'),
           item('project.open'),
           item('project.openFile'),
-          item('project.importScreenplay'),
-          item('project.importScreenplay'),
+          item('project.import'),
           { label: t.menuOpenRecent, submenu: recentEntries() },
           { separator: true },
           item('file.save'),

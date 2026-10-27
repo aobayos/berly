@@ -38,10 +38,10 @@ export async function exportPdf(
   }
 }
 
-/** Native screenplay picker, desktop only. Null on the web, where there is no
- * way to read an arbitrary path — App.tsx falls back to a file input, the same
- * split as openFromFile. */
-export async function pickScreenplayFile(): Promise<ImportedFile | null> {
+/** Native picker for Import (a BERLY project or a screenplay), desktop only.
+ * Null on the web, where there is no way to read an arbitrary path — Shell.tsx
+ * falls back to a file input, the same split as openFromFile. */
+export async function pickImportFile(): Promise<ImportedFile | null> {
   return backend.pickScreenplay ? backend.pickScreenplay() : null;
 }
 

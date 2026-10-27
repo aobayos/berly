@@ -52,9 +52,14 @@ const FILE_FILTERS = [
 ];
 
 const SCREENPLAY_FILTERS = [
-  { name: 'Screenplay', extensions: ['fountain', 'fdx', 'txt', 'spmd'] },
+  {
+    name: 'BERLY project or screenplay',
+    extensions: ['berly', 'json', 'fountain', 'fdx', 'trelby', 'txt', 'spmd'],
+  },
+  { name: 'BERLY project', extensions: ['berly', 'json'] },
   { name: 'Fountain', extensions: ['fountain', 'spmd', 'txt'] },
   { name: 'Final Draft', extensions: ['fdx'] },
+  { name: 'Trelby', extensions: ['trelby'] },
 ];
 
 function meta(project: Project): ProjectMeta {
@@ -157,8 +162,9 @@ ipcMain.handle(
   (_e, filePath: string): DocumentInfo | null => adopt(filePath)
 );
 
-// Hands the renderer the raw text and lets it parse: the Fountain and FDX
-// modules live in src/model and are not part of the main process's program.
+// The picker behind Import. Hands the renderer the raw text and lets it
+// decide — a BERLY project or a screenplay — and parse: the format modules
+// live in src/services and are not part of the main process's program.
 ipcMain.handle('doc:pickScreenplay', async (e): Promise<ImportedFile | null> => {
   const win = senderWindow(e);
   const { canceled, filePaths } = await dialog.showOpenDialog(win!, {

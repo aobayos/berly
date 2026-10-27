@@ -2,12 +2,19 @@
 // time this opens, so the dialog can show what it actually found rather than
 // asking the writer to commit blind.
 import { useEffect, useMemo, useState } from 'react';
-import type { ImportedScreenplay } from '@/services/screenplayImport';
+import type { ImportedScreenplay, ScreenplayFormat } from '@/services/screenplayImport';
 import { nameFromFilename } from '@/services/screenplayImport';
 import type { Project, ProjectMeta } from '@/model/types';
 import { listProjects } from '@/services/storage';
 import { currentProject } from '@/services/storage/documents';
-import { useI18n } from '@/i18n';
+import { useI18n, type Dict } from '@/i18n';
+
+// Exhaustive on purpose: a new import format won't build until it has a name.
+const FORMAT_LABEL: Record<ScreenplayFormat, (t: Dict) => string> = {
+  fountain: (t) => t.importFormatFountain,
+  fdx: (t) => t.importFormatFdx,
+  trelby: (t) => t.importFormatTrelby,
+};
 
 export type ImportTarget =
   | { kind: 'new'; name: string }
@@ -19,16 +26,30 @@ interface Props {
   imported: ImportedScreenplay;
   onCancel(): void;
   onConfirm(target: ImportTarget): void;
+  /** The series whose tab the import was started from: the dialog opens on
+   * "as an episode" with it already chosen, since that's almost certainly
+   * where the writer means it to go. */
+  intoShow?: string;
+  /** Started from that series' own Import Episode: where it goes is already
+   * answered, so only the episode itself (name, or which one to replace) is. */
+  locked?: boolean;
 }
 
-export default function ImportModal({ filename, imported, onCancel, onConfirm }: Props) {
+export default function ImportModal({
+  filename,
+  imported,
+  onCancel,
+  onConfirm,
+  intoShow,
+  locked = false,
+}: Props) {
   const { t } = useI18n();
-  const [mode, setMode] = useState<'new' | 'episode'>('new');
+  const [mode, setMode] = useState<'new' | 'episode'>(intoShow ? 'episode' : 'new');
   const [name, setName] = useState(
     imported.titlePage.title?.trim() || nameFromFilename(filename)
   );
   const [shows, setShows] = useState<ProjectMeta[]>([]);
-  const [showId, setShowId] = useState('');
+  const [showId, setShowId] = useState(intoShow ?? '');
   const [series, setSeries] = useState<Project | null>(null);
   const [episodeMode, setEpisodeMode] = useState<'append' | 'replace'>('append');
   const [scriptId, setScriptId] = useState('');
@@ -85,55 +106,61 @@ export default function ImportModal({ filename, imported, onCancel, onConfirm }:
         aria-modal="true"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <h2 className="modal-title">{t.importTitle}</h2>
+        <h2 className="modal-title">
+          {locked ? `${t.importEpisode} · ${series?.name ?? ''}` : t.importTitle}
+        </h2>
 
         <p className="modal-text import-summary">
           {t.importFrom} <strong>{filename}</strong> ·{' '}
-          {imported.format === 'fdx' ? t.importFormatFdx : t.importFormatFountain} ·{' '}
+          {FORMAT_LABEL[imported.format](t)} ·{' '}
           {sceneCount} {t.importScenesRead} · {imported.elements.length}{' '}
           {t.importElementsRead}
         </p>
 
-        <div className="import-modes">
-          <label>
-            <input
-              type="radio"
-              checked={mode === 'new'}
-              onChange={() => setMode('new')}
-            />
-            {t.importTargetNew}
-          </label>
-          <label>
-            <input
-              type="radio"
-              checked={mode === 'episode'}
-              onChange={() => setMode('episode')}
-              disabled={shows.length === 0}
-            />
-            {t.importTargetEpisode}
-          </label>
-        </div>
+        {!locked && (
+          <div className="import-modes">
+            <label>
+              <input
+                type="radio"
+                checked={mode === 'new'}
+                onChange={() => setMode('new')}
+              />
+              {t.importTargetNew}
+            </label>
+            <label>
+              <input
+                type="radio"
+                checked={mode === 'episode'}
+                onChange={() => setMode('episode')}
+                disabled={shows.length === 0}
+              />
+              {t.importTargetEpisode}
+            </label>
+          </div>
+        )}
 
         {mode === 'new' ? (
           <label className="field">
             {t.importProjectName}
             <input value={name} onChange={(e) => setName(e.target.value)} autoFocus />
           </label>
-        ) : shows.length === 0 ? (
+        ) : !locked && shows.length === 0 ? (
           <p className="import-note">{t.importNoSeries}</p>
         ) : (
           <>
-            <label className="field">
-              {t.importSeries}
-              <select value={showId} onChange={(e) => setShowId(e.target.value)}>
-                <option value="">—</option>
-                {shows.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {!locked && (
+              <label className="field">
+                {t.importSeries}
+                <select value={showId} onChange={(e) => setShowId(e.target.value)}>
+                  <option value="">—</option>
+                  {shows.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
 
             {series && (
               <>
