@@ -10,7 +10,7 @@ import {
 } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
-import { migrate } from '../src/model/projectMigrate';
+import { migrate } from '../src/services/projectMigrate';
 import { newId } from '../src/model/types';
 import type {
   DocumentInfo,
@@ -111,7 +111,7 @@ ipcMain.handle('deleteProject', async (_e, id: string): Promise<void> => {
 });
 
 /** Validates imported JSON and registers it under a fresh id — mirrors
- * src/storage/web.ts's importProject so both backends behave identically. */
+ * src/services/storage/web.ts's importProject so both backends behave identically. */
 ipcMain.handle('importProject', (_e, json: string): Project => {
   const data = migrate(JSON.parse(json));
   if (!data) throw new Error('Invalid BERLY project file');
@@ -294,7 +294,7 @@ ipcMain.on('clipboard:writeText', (_e, text: string) => clipboard.writeText(text
 //
 // Chromium marks misspellings on its own, but the suggestions for them live
 // only in the native context menu — which this app replaces with its own (see
-// src/shell/contextMenu.tsx). So the words and their suggestions are forwarded to
+// src/contexts/contextMenu.tsx). So the words and their suggestions are forwarded to
 // the renderer instead, and the corrections are applied back here, where
 // replaceMisspelling can edit the field without disturbing the caret.
 
@@ -381,7 +381,7 @@ ipcMain.handle('app:takePendingPaths', (): string[] => {
 
 // ---------- Menus ----------
 
-/** The app menu is drawn by the renderer (see src/shell/TitleBar.tsx) so
+/** The app menu is drawn by the renderer (see src/components/common/TitleBar.tsx) so
  * it can match the app's theme and language. macOS has no such freedom — the
  * menu bar belongs to the system — so there we build a native menu whose
  * items fire the very same command ids over IPC. */

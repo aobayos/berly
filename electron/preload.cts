@@ -51,7 +51,7 @@ const berlyAPI: StorageBackend = {
 };
 
 /** Everything that isn't persistence: window chrome, OS menus, recent
- * documents, clipboard. Kept apart from berlyAPI so src/storage/index.ts stays the
+ * documents, clipboard. Kept apart from berlyAPI so src/services/storage/index.ts stays the
  * single seam for saving/loading (see CLAUDE.md). */
 const berlyDesktop: DesktopBridge = {
   platform: process.platform,

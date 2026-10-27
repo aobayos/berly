@@ -1,4 +1,4 @@
-// Renderer-side facade over the Electron desktop bridge. Mirrors src/storage/index.ts:
+// Renderer-side facade over the Electron desktop bridge. Mirrors src/services/storage/index.ts:
 // the rest of the app talks to this module and never to window.berlyDesktop,
 // so every feature degrades to something sensible in the browser build
 // instead of being conditionally compiled out.
@@ -7,7 +7,8 @@ import type {
   RecentProject,
   SpellContext,
   Unsubscribe,
-} from './types';
+} from '@/desktop/types';
+import { SecureStorage } from '@/services/secure-storage';
 
 declare global {
   interface Window {
@@ -85,7 +86,7 @@ const MAX_WEB_RECENTS = 20;
 
 function readWebRecents(): RecentProject[] {
   try {
-    const raw = JSON.parse(localStorage.getItem(WEB_RECENTS_KEY) ?? '[]');
+    const raw = SecureStorage.get<unknown>(WEB_RECENTS_KEY);
     return Array.isArray(raw) ? (raw as RecentProject[]) : [];
   } catch {
     return [];
@@ -93,10 +94,7 @@ function readWebRecents(): RecentProject[] {
 }
 
 function writeWebRecents(entries: RecentProject[]): void {
-  localStorage.setItem(
-    WEB_RECENTS_KEY,
-    JSON.stringify(entries.slice(0, MAX_WEB_RECENTS))
-  );
+  SecureStorage.set(WEB_RECENTS_KEY, entries.slice(0, MAX_WEB_RECENTS));
 }
 
 export function listRecents(): Promise<RecentProject[]> {
