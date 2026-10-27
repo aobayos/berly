@@ -5,7 +5,8 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ImportedScreenplay } from '@/services/screenplayImport';
 import { nameFromFilename } from '@/services/screenplayImport';
 import type { Project, ProjectMeta } from '@/model/types';
-import { listProjects, loadProject } from '@/services/storage';
+import { listProjects } from '@/services/storage';
+import { currentProject } from '@/services/storage/documents';
 import { useI18n } from '@/i18n';
 
 export type ImportTarget =
@@ -42,7 +43,7 @@ export default function ImportModal({ filename, imported, onCancel, onConfirm }:
       setSeries(null);
       return;
     }
-    void loadProject(showId).then((p) => {
+    void currentProject(showId).then((p) => {
       setSeries(p);
       setScriptId(p?.scripts[0]?.id ?? '');
     });

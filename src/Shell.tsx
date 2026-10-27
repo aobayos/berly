@@ -25,7 +25,7 @@ import {
   setWindowUnsaved,
   takePendingPaths,
 } from '@/desktop/bridge';
-import { importProject, pickScreenplayFile, saveProject } from '@/services/storage';
+import { importProject, pickScreenplayFile } from '@/services/storage';
 import type { ImportedScreenplay } from '@/services/screenplayImport';
 import { parseScreenplay } from '@/services/screenplayImport';
 import {
@@ -35,6 +35,7 @@ import {
 } from '@/services/screenplayMerge';
 import ImportModal, { type ImportTarget } from '@/components/modals/ImportModal';
 import {
+  commitProject,
   discardRecovery,
   isFileBased,
   openFileDialog,
@@ -250,7 +251,7 @@ export default function Shell() {
           ? appendEpisode(target.project, imported, target.episodeName)
           : replaceEpisode(target.project, imported, target.scriptId);
 
-    await saveProject(project);
+    await commitProject(project);
     setPendingImport(null);
     setImportReport(imported.dropped);
     openProject(project.id, { title: project.name, kind: project.kind });
