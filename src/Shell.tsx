@@ -27,7 +27,7 @@ import {
   takePendingPaths,
   isDesktop,
 } from '@/desktop/bridge';
-import { importProject, pickScreenplayFile } from '@/services/storage';
+import { importProject, pickImportFile } from '@/services/storage';
 import type { ImportedScreenplay } from '@/services/screenplayImport';
 import { parseScreenplay } from '@/services/screenplayImport';
 import {
@@ -51,7 +51,7 @@ import type { RecentProject } from '@/desktop/types';
 
 export default function Shell() {
   const { t } = useI18n();
-  const { openProject } = useTabs();
+  const { openProject, activeTab } = useTabs();
   const guard = useUnsavedGuard();
   // The desktop window has no address bar to keep in step.
   useAddressBar(!isDesktop);
@@ -59,10 +59,12 @@ export default function Shell() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [recents, setRecents] = useState<RecentProject[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
-  const screenplayInput = useRef<HTMLInputElement>(null);
+  /** The series an import was started from, held across the file picker. */
+  const importInto = useRef<string | undefined>(undefined);
   const [pendingImport, setPendingImport] = useState<{
     filename: string;
     imported: ImportedScreenplay;
+    intoShow?: string;
   } | null>(null);
   const [importReport, setImportReport] = useState<Record<string, number> | null>(null);
 
@@ -119,7 +121,11 @@ export default function Shell() {
           window.alert(t.importEmpty);
           return;
         }
-        setPendingImport({ filename: name, imported: parsed });
+        setPendingImport({
+          filename: name,
+          imported: parsed,
+          intoShow: importInto.current,
+        });
       } catch {
         window.alert(t.importFailed);
       }
@@ -127,26 +133,53 @@ export default function Shell() {
     [t]
   );
 
+  /** The one way in for anything from outside: a BERLY project is copied into
+   * the library, anything else is read as a screenplay (Fountain, Final Draft,
+   * Trelby) and goes to the import dialog. Decided by content, like the
+   * screenplay formats themselves — a project is JSON, none of them are. */
+  const importText = useCallback(
+    (name: string, text: string) => {
+      if (!/^\s*\{/.test(text)) {
+        stageScreenplay(name, text);
+        return;
+      }
+      void importProject(text)
+        .then((project) => {
+          openProject(project.id, { title: project.name, kind: project.kind });
+          setOpenModal(null);
+        })
+        .catch(() => window.alert(t.importError));
+    },
+    [stageScreenplay, openProject, t]
+  );
+
   /** Native picker on the desktop, file input in the browser — the same split
    * as openFromFile, for the same reason. */
-  const importScreenplay = useCallback(() => {
-    if (!isFileBased) {
-      screenplayInput.current?.click();
-      return;
-    }
-    void pickScreenplayFile().then((file) => {
-      if (file) stageScreenplay(file.name, file.text);
-    });
-  }, [stageScreenplay]);
+  const pickImport = useCallback(
+    (intoShow?: string) => {
+      importInto.current = intoShow;
+      if (!isFileBased) {
+        fileInput.current?.click();
+        return;
+      }
+      void pickImportFile().then((file) => {
+        if (file) importText(file.name, file.text);
+      });
+    },
+    [importText]
+  );
+  const importFile = useCallback(() => pickImport(), [pickImport]);
+  const importEpisode = useCallback((showId: string) => pickImport(showId), [pickImport]);
 
   const shellActions = useMemo<ShellActions>(
     () => ({
       openProjectDialog,
       openFromFile,
-      importScreenplay,
+      importFile,
+      importEpisode,
       showShortcuts: () => setShortcutsOpen(true),
     }),
-    [openProjectDialog, openFromFile, importScreenplay]
+    [openProjectDialog, openFromFile, importFile, importEpisode]
   );
 
   const commandContext = useMemo<CommandContext>(
@@ -230,21 +263,6 @@ export default function Shell() {
     if (openModal === null) refreshRecents();
   }, [openModal, refreshRecents]);
 
-  function handleImportFile(file: File) {
-    void file
-      .text()
-      .then((text) => importProject(text))
-      .then((project) => {
-        openProject(project.id, { title: project.name, kind: project.kind });
-        setOpenModal(null);
-      })
-      .catch(() => window.alert(t.importError));
-  }
-
-  function handleScreenplayFile(file: File) {
-    void file.text().then((text) => stageScreenplay(file.name, text));
-  }
-
   async function applyImport(target: ImportTarget) {
     if (!pendingImport) return;
     const { imported } = pendingImport;
@@ -258,7 +276,19 @@ export default function Shell() {
     await commitProject(project);
     setPendingImport(null);
     setImportReport(imported.dropped);
-    openProject(project.id, { title: project.name, kind: project.kind });
+    // Straight to the script that was just written: an added episode is the
+    // last one, a replaced one keeps its id; a new project lands as usual.
+    const scriptId =
+      target.kind === 'append'
+        ? project.scripts[project.scripts.length - 1]?.id
+        : target.kind === 'replace'
+          ? target.scriptId
+          : undefined;
+    openProject(project.id, {
+      title: project.name,
+      kind: project.kind,
+      path: scriptId ? `/project/${project.id}/script/${scriptId}` : undefined,
+    });
   }
 
   return (
@@ -271,7 +301,7 @@ export default function Shell() {
             home={
               <ProjectList
                 onOpenProject={(id, meta) => openProject(id, meta)}
-                onImportClick={() => fileInput.current?.click()}
+                onImportClick={importFile}
               />
             }
           />
@@ -282,7 +312,7 @@ export default function Shell() {
         <OpenProjectModal
           mode={openModal}
           onClose={() => setOpenModal(null)}
-          onImportClick={() => fileInput.current?.click()}
+          onImportClick={importFile}
         />
       )}
 
@@ -301,6 +331,13 @@ export default function Shell() {
           imported={pendingImport.imported}
           onCancel={() => setPendingImport(null)}
           onConfirm={(target) => void applyImport(target)}
+          // From a series' own button the target is settled; from the menu
+          // inside a series tab it is only the likely answer.
+          intoShow={
+            pendingImport.intoShow ??
+            (activeTab?.kind === 'show' ? activeTab.projectId : undefined)
+          }
+          locked={Boolean(pendingImport.intoShow)}
         />
       )}
 
@@ -337,23 +374,11 @@ export default function Shell() {
       <input
         ref={fileInput}
         type="file"
-        accept=".json,.berly,application/json"
+        accept=".berly,.json,application/json,.fountain,.fdx,.trelby,.txt,.spmd"
         hidden
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) handleImportFile(file);
-          e.target.value = '';
-        }}
-      />
-
-      <input
-        ref={screenplayInput}
-        type="file"
-        accept=".fountain,.fdx,.txt,.spmd"
-        hidden
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) handleScreenplayFile(file);
+          if (file) void file.text().then((text) => importText(file.name, text));
           e.target.value = '';
         }}
       />
