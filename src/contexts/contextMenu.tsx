@@ -22,6 +22,12 @@ import {
 import type { SpellContext } from '@/desktop/types';
 import { useI18n, type Dict } from '@/i18n';
 
+/** Fired at the focused element by Select All in the context menu. The
+ * script editor cancels it and selects the whole script (see
+ * src/components/editor/useSelectAll.ts); uncancelled, the browser's own
+ * select-all runs. */
+export const SELECT_ALL_EVENT = 'berly:select-all';
+
 type ShowContextMenu = (
   event: React.MouseEvent | MouseEvent,
   entries: MenuEntry[]
@@ -109,7 +115,16 @@ export function clipboardEntries(t: Dict, editable: boolean): MenuEntry[] {
     {
       label: t.ctxSelectAll,
       accelerator: 'Mod+A',
-      onSelect: run(() => document.execCommand('selectAll')),
+      onSelect: run(() => {
+        // The script editor takes this over to select every element rather
+        // than just the focused one; anywhere else it's the browser's own.
+        const request = new Event(SELECT_ALL_EVENT, {
+          bubbles: true,
+          cancelable: true,
+        });
+        const target = document.activeElement ?? document;
+        if (target.dispatchEvent(request)) document.execCommand('selectAll');
+      }),
     },
   ];
 }

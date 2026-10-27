@@ -30,6 +30,7 @@ import {
 import { toFountain } from '@/services/fountain';
 import { extractCharacters, extractPlaces } from '@/services/suggestions';
 import { useI18n } from '@/i18n';
+import { useSelectAll } from '@/components/editor/useSelectAll';
 import ElementBlock, { type FocusRequest } from '@/components/editor/ElementBlock';
 import ScriptPages from '@/components/editor/ScriptPages';
 import Sidebar from '@/components/editor/Sidebar';
@@ -355,6 +356,26 @@ export default function Editor() {
     },
     [touchScript, requestFocus]
   );
+
+  // Typing, deleting, cutting or pasting over Ctrl+A leaves one element of
+  // the first element's type — the same thing Final Draft does.
+  const handleReplaceAll = useCallback(
+    (text: string) => {
+      const next = newElement(script?.elements[0]?.type ?? 'scene', text);
+      // Its own undo step, never folded into the typing just before it.
+      lastHistoryPush.current = 0;
+      touchScript((s) => ({ ...s, elements: [next] }));
+      requestFocus(next.id, 'end');
+    },
+    [script, touchScript, requestFocus]
+  );
+
+  const mainRef = useRef<HTMLElement>(null);
+  const allSelected = useSelectAll(mainRef, {
+    enabled: isActiveTab && view === 'script',
+    elements: script?.elements ?? [],
+    onReplaceAll: handleReplaceAll,
+  });
 
   const handleReorderScenes = useCallback(
     (fromIndex: number, toIndex: number) => {
@@ -754,7 +775,10 @@ export default function Editor() {
           />
         )}
 
-        <main className="editor-main">
+        <main
+          ref={mainRef}
+          className={`editor-main ${allSelected ? 'is-all-selected' : ''}`}
+        >
           {view === 'bible' ? (
             <BibleView
               project={project}
