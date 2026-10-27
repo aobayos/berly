@@ -740,6 +740,19 @@ a:focus-visible,
   caret-color: #000;
 }
 
+/* Ctrl+A over the whole script (src/components/editor/useSelectAll.ts). A
+   native selection can't span the blocks, so the text is painted as a
+   highlight in the system's own selection colours, and the stray caret in
+   the focused block is hidden. */
+::highlight(berly-select-all) {
+  background-color: Highlight;
+  color: HighlightText;
+}
+
+.editor-main.is-all-selected .el {
+  caret-color: transparent;
+}
+
 .el:empty::before {
   content: attr(data-placeholder);
   color: #b9b4a8;
