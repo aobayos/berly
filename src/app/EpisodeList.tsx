@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { commitProject, openDocument, useDocument } from '@/services/storage/documents';
+import {
+  commitProject,
+  documentState,
+  openDocument,
+  saveDocument,
+  useDocument,
+} from '@/services/storage/documents';
 import type { Project } from '@/model/types';
 import { newScript } from '@/model/types';
 import { useI18n } from '@/i18n';
@@ -52,11 +58,17 @@ export default function EpisodeList() {
     );
   }
 
-  function mutate(fn: (p: NonNullable<typeof project>) => void) {
+  /** `save`: write the file now rather than leave the change for Ctrl+S,
+   * which only exists inside an episode — from this page there would be no
+   * way to save it at all. A project with no file yet stays unsaved rather
+   * than throwing a Save dialog at a rename. */
+  function mutate(fn: (p: NonNullable<typeof project>) => void, save = false) {
     if (!project) return;
     const next = { ...project, scripts: [...project.scripts], updatedAt: Date.now() };
     fn(next);
-    void commitProject(next);
+    void commitProject(next).then(() => {
+      if (save && documentState(next.id)?.path) void saveDocument(next.id);
+    });
   }
 
   function handleNewEpisode() {
@@ -75,14 +87,14 @@ export default function EpisodeList() {
       p.scripts = p.scripts.map((s) =>
         s.id === scriptId ? { ...s, name: name.trim() } : s
       );
-    });
+    }, true);
   }
 
   function handleDelete(scriptId: string) {
     if (!window.confirm(t.deleteEpisodeConfirm)) return;
     mutate((p) => {
       p.scripts = p.scripts.filter((s) => s.id !== scriptId);
-    });
+    }, true);
   }
 
   const dateFmt = new Intl.DateTimeFormat(lang === 'fr' ? 'fr-FR' : 'en-US', {
