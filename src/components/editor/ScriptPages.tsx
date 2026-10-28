@@ -12,7 +12,12 @@ import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { ElementType, ScriptElement } from '@/model/types';
 import { ELEMENT_TYPES } from '@/model/types';
-import { PAGE_CONTENT_PX, pageStarts, type ElementBox } from '@/services/pagination';
+import {
+  KEEP_WITH_NEXT,
+  PAGE_CONTENT_PX,
+  pageStarts,
+  type ElementBox,
+} from '@/services/pagination';
 
 interface Props {
   elements: ScriptElement[];
@@ -138,6 +143,7 @@ export default function ScriptPages({
     const boxes: ElementBox[] = nodes.map((node, i) => ({
       height: (node as HTMLElement).offsetHeight,
       marginTop: margins[elements[i].type] ?? 0,
+      keepWithNext: KEEP_WITH_NEXT.has(elements[i].type),
     }));
 
     const next = pageStarts(boxes, PAGE_CONTENT_PX);

@@ -63,11 +63,50 @@ function wrapText(text: string, maxChars: number): string[] {
   return lines;
 }
 
-function nextNonEmptyType(elements: Script['elements'], from: number): ElementType | null {
+/** Elements that only introduce what follows them, and so must never end a
+ * page. Same list as KEEP_WITH_NEXT in src/services/pagination.ts, which
+ * paginates the screen — keep them in step. */
+const KEEP_WITH_NEXT: ReadonlySet<ElementType> = new Set<ElementType>([
+  'scene',
+  'shot',
+  'character',
+  'parenthetical',
+]);
+
+function wrappedLines(el: Script['elements'][number]): string[] {
+  const layout = LAYOUT[el.type];
+  const text = el.text.trim();
+  const displayText = layout.upper ? text.toUpperCase() : text;
+  const maxChars = Math.max(1, Math.floor(layout.widthIn * CHARS_PER_INCH));
+  return wrapText(displayText, maxChars);
+}
+
+function nextNonEmpty(elements: Script['elements'], from: number): number {
   for (let i = from + 1; i < elements.length; i++) {
-    if (elements[i].text.trim()) return elements[i].type;
+    if (elements[i].text.trim()) return i;
   }
-  return null;
+  return -1;
+}
+
+/** Lines that have to fit for element `i` to start on this page: all of its
+ * own, plus — while it and what follows keep with the next — the whole run up
+ * to the first line of the element they introduce. A cue then never ends a
+ * page without its line, nor a heading without its scene. */
+function linesToKeep(elements: Script['elements'], i: number): number {
+  let total = wrappedLines(elements[i]).length;
+  let k = i;
+  while (KEEP_WITH_NEXT.has(elements[k].type)) {
+    k = nextNonEmpty(elements, k);
+    if (k === -1) break;
+    const el = elements[k];
+    total += LAYOUT[el.type].blankBefore;
+    if (!KEEP_WITH_NEXT.has(el.type)) {
+      total += 1;
+      break;
+    }
+    total += wrappedLines(el).length;
+  }
+  return total;
 }
 
 export function writeScreenplayPdf(
@@ -143,18 +182,10 @@ function drawScript(doc: PDFKit.PDFDocument, script: Script): void {
     if (!text) return;
 
     const layout = LAYOUT[el.type];
-    const displayText = layout.upper ? text.toUpperCase() : text;
-    const maxChars = Math.max(1, Math.floor(layout.widthIn * CHARS_PER_INCH));
-    const lines = wrapText(displayText, maxChars);
+    const lines = wrappedLines(el);
     const blank = i === 0 ? 0 : layout.blankBefore;
 
-    // Avoid stranding a character cue at the bottom of a page with no
-    // room for the dialogue that follows it.
-    const next = nextNonEmptyType(script.elements, i);
-    const needsFollowUp =
-      el.type === 'character' &&
-      (next === 'dialogue' || next === 'parenthetical' || next === 'lyrics');
-    ensureRoom(blank + lines.length + (needsFollowUp ? 1 : 0));
+    ensureRoom(blank + linesToKeep(script.elements, i));
 
     y += blank * LINE_HEIGHT;
     doc.font(courierFace(layout)).fontSize(12);
