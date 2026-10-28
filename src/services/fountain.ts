@@ -22,6 +22,7 @@ export function toFountain(project: Project, script: Script): string {
   script.elements.forEach((el, i) => {
     const text = el.text.trim();
     if (!text) return;
+    const at = lines.length;
 
     switch (el.type) {
       case 'scene': {
@@ -79,6 +80,14 @@ export function toFountain(project: Project, script: Script): string {
         lines.push('');
         break;
       }
+    }
+
+    // A note rides at the end of its own line as a Fountain [[note]], so it
+    // comes back attached to the same element (see fountainParse.ts). Kept on
+    // one line: a line break inside it would split a cue from its dialogue.
+    if (el.note) {
+      const note = el.note.replace(/\s+/g, ' ').replace(/]]/g, '] ]').trim();
+      lines[at] += ` [[${note}]]`;
     }
 
     // Guard: a character cue must be followed by dialogue/parenthetical in

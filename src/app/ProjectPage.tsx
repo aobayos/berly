@@ -320,6 +320,7 @@ function ScriptCard({
 }) {
   const { t } = useI18n();
   const scenes = script.elements.filter((el) => el.type === 'scene').length;
+  const notes = script.elements.filter((el) => el.note).length;
   return (
     <li className="project-card">
       <button type="button" className="project-card-main" onClick={onOpen}>
@@ -327,6 +328,7 @@ function ScriptCard({
         <span className="project-name">{script.name || t.script}</span>
         <span className="project-meta">
           {scenes} {scenes === 1 ? t.scene : t.scenes}
+          {notes > 0 && ` · ${notes} ${notes === 1 ? t.noteOne : t.noteMany}`}
         </span>
         <span className="project-meta">
           {t.lastEdited} {dateFmt.format(script.updatedAt)}

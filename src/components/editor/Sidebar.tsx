@@ -68,13 +68,15 @@ export default function Sidebar({
   onReorderScenes,
 }: Props) {
   const { t } = useI18n();
-  const [tab, setTab] = useState<'scenes' | 'pages'>('scenes');
+  const [tab, setTab] = useState<'scenes' | 'pages' | 'notes'>('scenes');
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
   );
 
   const scenes = elements.filter((el) => el.type === 'scene');
   const pages = useMemo(() => pageInfo(elements, pageStarts), [elements, pageStarts]);
+  // In script order, so working through a reader's notes reads the script.
+  const notes = elements.filter((el) => el.note);
 
   function handleDragEnd(e: DragEndEvent) {
     const { active, over } = e;
@@ -101,6 +103,13 @@ export default function Sidebar({
           onClick={() => setTab('pages')}
         >
           {t.pagesTab} ({pages.length})
+        </button>
+        <button
+          type="button"
+          className={`side-tab ${tab === 'notes' ? 'is-active' : ''}`}
+          onClick={() => setTab('notes')}
+        >
+          {t.notesTab} ({notes.length})
         </button>
       </div>
 
@@ -154,6 +163,28 @@ export default function Sidebar({
           ))}
         </ol>
       )}
+
+      {tab === 'notes' &&
+        (notes.length === 0 ? (
+          <p className="side-empty">{t.noNotes}</p>
+        ) : (
+          <ol className="side-list">
+            {notes.map((el) => (
+              <li key={el.id}>
+                <button
+                  type="button"
+                  className="side-item side-note"
+                  onClick={() => onJump(el.id)}
+                >
+                  <span className="side-snippet">
+                    {el.text.trim() || t.elements[el.type]}
+                  </span>
+                  <span className="side-note-text">{el.note}</span>
+                </button>
+              </li>
+            ))}
+          </ol>
+        ))}
     </nav>
   );
 }

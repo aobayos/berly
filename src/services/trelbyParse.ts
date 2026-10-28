@@ -25,8 +25,11 @@ const LINE_TYPES: Record<string, ElementType> = {
 /** Trelby types BERLY has no element for, named for the post-import report. */
 const DROPPED_TYPES: Record<string, string> = {
   '@': 'Act Break',
-  '%': 'Note',
 };
+
+/** A Trelby note is a paragraph of its own; here it becomes the note of the
+ * line before it. */
+const NOTE_TYPE = '%';
 
 /** First character of a script line: what joins it to the next line of the
  * same element. `.` ends the element. A forced break (`|`) becomes a space,
@@ -70,8 +73,13 @@ export function parseTrelby(text: string): ImportedScreenplay {
     parts = [];
     if (!body) return;
     const mapped = LINE_TYPES[type];
+    const previous = elements[elements.length - 1];
     if (mapped) {
       elements.push(newElement(mapped, body));
+    } else if (type === NOTE_TYPE && previous) {
+      previous.note = previous.note ? `${previous.note}\n${body}` : body;
+    } else if (type === NOTE_TYPE) {
+      dropped.Note = (dropped.Note ?? 0) + 1;
     } else {
       const name = DROPPED_TYPES[type] ?? `Unknown (${type})`;
       dropped[name] = (dropped[name] ?? 0) + 1;

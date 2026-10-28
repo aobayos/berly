@@ -30,6 +30,8 @@ export interface EditorCommands {
   undo?(): void;
   redo?(): void;
   find?(): void;
+  /** Opens the note on the line being written. */
+  note?(): void;
   exportFountain?(): void;
   exportPdf?(): void;
   /** The editor shows the script or title page, and the Bible or reports in
@@ -229,6 +231,14 @@ export function useCommands(ctx: CommandContext): Command[] {
         run: () => editor?.find?.(),
       },
       {
+        id: 'edit.note',
+        label: t.menuNote,
+        accelerator: 'Mod+Alt+N',
+        group: 'edit',
+        enabled: Boolean(editor?.note),
+        run: () => editor?.note?.(),
+      },
+      {
         id: 'view.script',
         label: t.script,
         // Letters, not digits: on AZERTY the number row needs Shift, so
@@ -381,6 +391,7 @@ export function useMenus(commands: Command[], ctx: CommandContext): MenuSpec[] {
           ...clipboardEntries(t, isEditableFocused()),
           { separator: true },
           item('edit.find'),
+          item('edit.note'),
         ],
       },
       {
