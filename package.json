@@ -10,6 +10,8 @@
 		"dev": "vite",
 		"build": "tsc -b && vite build",
 		"lint": "oxlint",
+		"format": "prettier --write .",
+		"format:check": "prettier --check .",
 		"preview": "vite preview",
 		"electron:build-main": "node scripts/prep-dist-electron.cjs && tsc -p tsconfig.electron.json",
 		"electron:dev": "npm run electron:build-main && concurrently -k -n VITE,ELECTRON \"vite\" \"wait-on http://localhost:5173 && electron .\"",
@@ -59,6 +61,7 @@
 		"electron": "^41.7.1",
 		"electron-builder": "^26.15.3",
 		"oxlint": "^1.71.0",
+		"prettier": "3.9.10",
 		"typescript": "~6.0.2",
 		"vite": "^8.1.1",
 		"wait-on": "^9.1.0"

@@ -14,15 +14,15 @@ npm run electron:dev   # desktop app (Vite + Electron together)
 
 ## Scripts
 
-| Script | What it does |
-| --- | --- |
-| `dev` | Vite dev server (web only) |
-| `build` | `tsc -b` then production web build into `dist/` |
-| `lint` | oxlint |
-| `preview` | serve the production web build |
-| `electron:build-main` | compile the Electron main/preload into `dist-electron/` |
-| `electron:dev` | build main, then run Vite and Electron together |
-| `electron:build` | full build and package with electron-builder into `release/` |
+| Script                | What it does                                                 |
+| --------------------- | ------------------------------------------------------------ |
+| `dev`                 | Vite dev server (web only)                                   |
+| `build`               | `tsc -b` then production web build into `dist/`              |
+| `lint`                | oxlint                                                       |
+| `preview`             | serve the production web build                               |
+| `electron:build-main` | compile the Electron main/preload into `dist-electron/`      |
+| `electron:dev`        | build main, then run Vite and Electron together              |
+| `electron:build`      | full build and package with electron-builder into `release/` |
 
 There is no test suite yet.
 

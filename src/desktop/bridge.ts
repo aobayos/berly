@@ -2,18 +2,13 @@
 // the rest of the app talks to this module and never to window.berlyDesktop,
 // so every feature degrades to something sensible in the browser build
 // instead of being conditionally compiled out.
-import type {
-  DesktopBridge,
-  RecentProject,
-  SpellContext,
-  Unsubscribe,
-} from '@/desktop/types';
+import type { DesktopBridge, RecentProject, SpellContext, Unsubscribe } from '@/desktop/types';
 import { SecureStorage } from '@/services/secure-storage';
 
 declare global {
-  interface Window {
-    berlyDesktop?: DesktopBridge;
-  }
+	interface Window {
+		berlyDesktop?: DesktopBridge;
+	}
 }
 
 const bridge = window.berlyDesktop;
@@ -24,9 +19,7 @@ export const isDesktop = Boolean(bridge);
 
 /** macOS keeps its menu bar and traffic lights in the system chrome, so the
  * title bar renders differently there. */
-export const isMac =
-  bridge?.platform === 'darwin' ||
-  (!bridge && navigator.platform.toLowerCase().includes('mac'));
+export const isMac = bridge?.platform === 'darwin' || (!bridge && navigator.platform.toLowerCase().includes('mac'));
 
 const noop = () => {};
 const never: Unsubscribe = noop;
@@ -39,28 +32,27 @@ export const closeWindow = () => bridge?.close();
 export const forceCloseWindow = () => bridge?.forceClose();
 export const isWindowMaximized = () => bridge?.isMaximized() ?? Promise.resolve(false);
 export const onMaximizedChange = (cb: (maximized: boolean) => void): Unsubscribe =>
-  bridge?.onMaximizedChange(cb) ?? never;
+	bridge?.onMaximizedChange(cb) ?? never;
 
 /** Tells the shell whether closing the window would lose work. The browser
  * has its own mechanism for this (beforeunload), so this is a no-op there. */
 export const setWindowUnsaved = (unsaved: boolean) => bridge?.setUnsaved(unsaved);
-export const onRequestClose = (cb: () => void): Unsubscribe =>
-  bridge?.onRequestClose(cb) ?? never;
+export const onRequestClose = (cb: () => void): Unsubscribe => bridge?.onRequestClose(cb) ?? never;
 
 // ---------- Clipboard ----------
 
 export async function readClipboard(): Promise<string> {
-  if (bridge) return bridge.readText();
-  try {
-    return await navigator.clipboard.readText();
-  } catch {
-    return '';
-  }
+	if (bridge) return bridge.readText();
+	try {
+		return await navigator.clipboard.readText();
+	} catch {
+		return '';
+	}
 }
 
 export function writeClipboard(text: string): void {
-  if (bridge) bridge.writeText(text);
-  else void navigator.clipboard?.writeText(text).catch(noop);
+	if (bridge) bridge.writeText(text);
+	else void navigator.clipboard?.writeText(text).catch(noop);
 }
 
 // ---------- Spelling ----------
@@ -70,11 +62,9 @@ export function writeClipboard(text: string): void {
  * the fallback is to let that menu through (see contextMenu.tsx). */
 export const canCorrectSpelling = Boolean(bridge);
 
-export const setSpellCheckerLanguage = (lang: string) =>
-  bridge?.setSpellCheckerLanguage(lang);
+export const setSpellCheckerLanguage = (lang: string) => bridge?.setSpellCheckerLanguage(lang);
 export const addWordToDictionary = (word: string) => bridge?.addWordToDictionary(word);
-export const onSpellContext = (cb: (info: SpellContext) => void): Unsubscribe =>
-  bridge?.onSpellContext(cb) ?? never;
+export const onSpellContext = (cb: (info: SpellContext) => void): Unsubscribe => bridge?.onSpellContext(cb) ?? never;
 
 // ---------- Recent projects ----------
 
@@ -85,55 +75,46 @@ const WEB_RECENTS_KEY = 'berly.recents';
 const MAX_WEB_RECENTS = 20;
 
 function readWebRecents(): RecentProject[] {
-  try {
-    const raw = SecureStorage.get<unknown>(WEB_RECENTS_KEY);
-    return Array.isArray(raw) ? (raw as RecentProject[]) : [];
-  } catch {
-    return [];
-  }
+	try {
+		const raw = SecureStorage.get<unknown>(WEB_RECENTS_KEY);
+		return Array.isArray(raw) ? (raw as RecentProject[]) : [];
+	} catch {
+		return [];
+	}
 }
 
 function writeWebRecents(entries: RecentProject[]): void {
-  SecureStorage.set(WEB_RECENTS_KEY, entries.slice(0, MAX_WEB_RECENTS));
+	SecureStorage.set(WEB_RECENTS_KEY, entries.slice(0, MAX_WEB_RECENTS));
 }
 
 export function listRecents(): Promise<RecentProject[]> {
-  if (bridge) return bridge.listRecents();
-  return Promise.resolve(
-    readWebRecents().sort((a, b) => b.openedAt - a.openedAt)
-  );
+	if (bridge) return bridge.listRecents();
+	return Promise.resolve(readWebRecents().sort((a, b) => b.openedAt - a.openedAt));
 }
 
-export function addRecent(
-  id: string,
-  name: string,
-  kind: 'movie' | 'show'
-): void {
-  if (bridge) {
-    bridge.addRecent(id, name, kind);
-    return;
-  }
-  const rest = readWebRecents().filter((e) => e.id !== id);
-  writeWebRecents([{ id, name, kind, path: '', openedAt: Date.now() }, ...rest]);
+export function addRecent(id: string, name: string, kind: 'movie' | 'show'): void {
+	if (bridge) {
+		bridge.addRecent(id, name, kind);
+		return;
+	}
+	const rest = readWebRecents().filter((e) => e.id !== id);
+	writeWebRecents([{ id, name, kind, path: '', openedAt: Date.now() }, ...rest]);
 }
 
 export function removeRecent(id: string): void {
-  if (bridge) bridge.removeRecent(id);
-  else writeWebRecents(readWebRecents().filter((e) => e.id !== id));
+	if (bridge) bridge.removeRecent(id);
+	else writeWebRecents(readWebRecents().filter((e) => e.id !== id));
 }
 
 export function clearRecents(): void {
-  if (bridge) bridge.clearRecents();
-  else writeWebRecents([]);
+	if (bridge) bridge.clearRecents();
+	else writeWebRecents([]);
 }
 
 // ---------- Opening projects from the OS ----------
 
-export const takePendingPaths = (): Promise<string[]> =>
-  bridge?.takePendingPaths() ?? Promise.resolve([]);
+export const takePendingPaths = (): Promise<string[]> => bridge?.takePendingPaths() ?? Promise.resolve([]);
 
-export const onOpenProject = (cb: (projectId: string) => void): Unsubscribe =>
-  bridge?.onOpenProject(cb) ?? never;
+export const onOpenProject = (cb: (projectId: string) => void): Unsubscribe => bridge?.onOpenProject(cb) ?? never;
 
-export const onMenuCommand = (cb: (command: string) => void): Unsubscribe =>
-  bridge?.onMenuCommand(cb) ?? never;
+export const onMenuCommand = (cb: (command: string) => void): Unsubscribe => bridge?.onMenuCommand(cb) ?? never;

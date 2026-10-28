@@ -1,0 +1,6 @@
+dist
+dist-electron
+release
+build
+public
+package-lock.json

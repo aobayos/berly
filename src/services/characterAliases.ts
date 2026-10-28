@@ -15,28 +15,28 @@ import { isSheetEmpty } from '@/services/characterSheet';
 export type ResolveName = (name: string) => string;
 
 export function characterResolver(bible: BibleEntry[]): ResolveName {
-  const canonical = new Map<string, string>();
-  for (const entry of bible) {
-    if (entry.kind !== 'character') continue;
-    canonical.set(entry.name, entry.name);
-    for (const alias of entry.aliases ?? []) canonical.set(alias, entry.name);
-  }
+	const canonical = new Map<string, string>();
+	for (const entry of bible) {
+		if (entry.kind !== 'character') continue;
+		canonical.set(entry.name, entry.name);
+		for (const alias of entry.aliases ?? []) canonical.set(alias, entry.name);
+	}
 
-  return (cue) => {
-    const name = characterName(cue);
-    const known = canonical.get(name);
-    if (known) return known;
-    if (!name.includes('/')) return name;
-    const parts = name
-      .split('/')
-      .map((part) => part.trim())
-      .filter(Boolean);
-    for (const part of parts) {
-      const match = canonical.get(part);
-      if (match) return match;
-    }
-    return parts[0] ?? name;
-  };
+	return (cue) => {
+		const name = characterName(cue);
+		const known = canonical.get(name);
+		if (known) return known;
+		if (!name.includes('/')) return name;
+		const parts = name
+			.split('/')
+			.map((part) => part.trim())
+			.filter(Boolean);
+		for (const part of parts) {
+			const match = canonical.get(part);
+			if (match) return match;
+		}
+		return parts[0] ?? name;
+	};
 }
 
 /** With no Bible to consult: only the slash convention applies. */
@@ -46,26 +46,26 @@ export const plainResolver: ResolveName = characterResolver([]);
  * One of those can be folded into another character as an alias; an entry
  * the writer has filled in can't, or their work would be orphaned. */
 export function isBlankEntry(entry: BibleEntry): boolean {
-  return isSheetEmpty(entry.sheet) && !entry.note.trim() && !entry.aliases?.length;
+	return isSheetEmpty(entry.sheet) && !entry.note.trim() && !entry.aliases?.length;
 }
 
 /** Every alias in the Bible, for autocomplete: either name can be typed. */
 export function characterAliases(bible: BibleEntry[]): string[] {
-  return bible.flatMap((entry) => (entry.kind === 'character' ? (entry.aliases ?? []) : []));
+	return bible.flatMap((entry) => (entry.kind === 'character' ? (entry.aliases ?? []) : []));
 }
 
 /** Why `alias` can't be added to `owner`, or null when it can: it must not be
  * the owner's own name, another character's name, or another's alias. */
 export function aliasConflict(
-  bible: BibleEntry[],
-  owner: string,
-  alias: string
+	bible: BibleEntry[],
+	owner: string,
+	alias: string,
 ): { kind: 'self' } | { kind: 'name' | 'alias'; other: string } | null {
-  if (alias === owner) return { kind: 'self' };
-  for (const entry of bible) {
-    if (entry.kind !== 'character' || entry.name === owner) continue;
-    if (entry.name === alias && !isBlankEntry(entry)) return { kind: 'name', other: entry.name };
-    if (entry.aliases?.includes(alias)) return { kind: 'alias', other: entry.name };
-  }
-  return null;
+	if (alias === owner) return { kind: 'self' };
+	for (const entry of bible) {
+		if (entry.kind !== 'character' || entry.name === owner) continue;
+		if (entry.name === alias && !isBlankEntry(entry)) return { kind: 'name', other: entry.name };
+		if (entry.aliases?.includes(alias)) return { kind: 'alias', other: entry.name };
+	}
+	return null;
 }

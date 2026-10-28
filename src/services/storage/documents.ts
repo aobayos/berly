@@ -20,12 +20,12 @@ import { backend, loadProject, saveProject } from '@/services/storage';
 export const isFileBased = Boolean(backend.openDocument);
 
 export interface DocumentState {
-  project: Project;
-  /** Absolute path of the backing file; null while the project is untitled. */
-  path: string | null;
-  /** Edits made since the last save. Always false in the web build, which
-   * saves continuously and so has nothing to warn about. */
-  dirty: boolean;
+	project: Project;
+	/** Absolute path of the backing file; null while the project is untitled. */
+	path: string | null;
+	/** Edits made since the last save. Always false in the web build, which
+	 * saves continuously and so has nothing to warn about. */
+	dirty: boolean;
 }
 
 const open = new Map<string, DocumentState>();
@@ -37,17 +37,17 @@ const listeners = new Set<() => void>();
 const flushers = new Map<string, Set<() => void>>();
 
 function emit(): void {
-  for (const listener of listeners) listener();
+	for (const listener of listeners) listener();
 }
 
 function subscribe(listener: () => void): () => void {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
+	listeners.add(listener);
+	return () => listeners.delete(listener);
 }
 
 function set(id: string, state: DocumentState): void {
-  open.set(id, state);
-  emit();
+	open.set(id, state);
+	emit();
 }
 
 // ---------- Reading ----------
@@ -55,33 +55,33 @@ function set(id: string, state: DocumentState): void {
 /** The open copy of a project, loading it from storage on first use. Later
  * calls hand back the in-memory copy, unsaved edits included. */
 export async function openDocument(id: string): Promise<Project | null> {
-  const existing = open.get(id);
-  if (existing) return existing.project;
+	const existing = open.get(id);
+	if (existing) return existing.project;
 
-  const project = await loadProject(id);
-  if (!project) return null;
+	const project = await loadProject(id);
+	if (!project) return null;
 
-  // Re-check: an await gave another caller the chance to get here first, and
-  // two copies of the same project would silently diverge.
-  const raced = open.get(id);
-  if (raced) return raced.project;
+	// Re-check: an await gave another caller the chance to get here first, and
+	// two copies of the same project would silently diverge.
+	const raced = open.get(id);
+	if (raced) return raced.project;
 
-  const info = await backend.documentInfo?.(id);
-  set(id, { project, path: info?.path ?? null, dirty: false });
-  return project;
+	const info = await backend.documentInfo?.(id);
+	set(id, { project, path: info?.path ?? null, dirty: false });
+	return project;
 }
 
 /** Lets a mounted editor publish its pending edits on demand. Returns the
  * unregister function, for an effect cleanup. */
 export function registerFlush(id: string, flush: () => void): () => void {
-  const set = flushers.get(id) ?? new Set();
-  set.add(flush);
-  flushers.set(id, set);
-  return () => set.delete(flush);
+	const set = flushers.get(id) ?? new Set();
+	set.add(flush);
+	flushers.set(id, set);
+	return () => set.delete(flush);
 }
 
 function flush(id: string): void {
-  flushers.get(id)?.forEach((fn) => fn());
+	flushers.get(id)?.forEach((fn) => fn());
 }
 
 /** The project as the writer currently sees it: the open copy, unsaved edits
@@ -89,35 +89,35 @@ function flush(id: string): void {
  * edits a project outside the editor must read through this — reading
  * storage directly hands back a copy the open document has moved past. */
 export async function currentProject(id: string): Promise<Project | null> {
-  flush(id);
-  return open.get(id)?.project ?? loadProject(id);
+	flush(id);
+	return open.get(id)?.project ?? loadProject(id);
 }
 
 export function documentState(id: string): DocumentState | undefined {
-  return open.get(id);
+	return open.get(id);
 }
 
 /** Subscribes a component to one document's state. */
 export function useDocument(id: string): DocumentState | undefined {
-  return useSyncExternalStore(
-    subscribe,
-    useCallback(() => open.get(id), [id])
-  );
+	return useSyncExternalStore(
+		subscribe,
+		useCallback(() => open.get(id), [id]),
+	);
 }
 
 /** True when any open document has unsaved edits — what the close prompt and
  * the main process's close veto both key off. */
 export function useHasUnsaved(): boolean {
-  return useSyncExternalStore(subscribe, hasUnsaved);
+	return useSyncExternalStore(subscribe, hasUnsaved);
 }
 
 export function hasUnsaved(): boolean {
-  for (const state of open.values()) if (state.dirty) return true;
-  return false;
+	for (const state of open.values()) if (state.dirty) return true;
+	return false;
 }
 
 export function unsavedDocuments(): DocumentState[] {
-  return [...open.values()].filter((state) => state.dirty);
+	return [...open.values()].filter((state) => state.dirty);
 }
 
 // ---------- Writing ----------
@@ -125,12 +125,12 @@ export function unsavedDocuments(): DocumentState[] {
 /** Records an edit in memory. Nothing is written here — the editor's
  * debounce decides when, through writeDraft. */
 export function updateDocument(project: Project): void {
-  const existing = open.get(project.id);
-  set(project.id, {
-    project,
-    path: existing?.path ?? null,
-    dirty: true,
-  });
+	const existing = open.get(project.id);
+	set(project.id, {
+		project,
+		path: existing?.path ?? null,
+		dirty: true,
+	});
 }
 
 /** Applies a change made outside the editor — episodes added, renamed or
@@ -139,12 +139,12 @@ export function updateDocument(project: Project): void {
  * browser), so the open copy and the file can't drift apart; a project that
  * isn't open goes straight to storage. */
 export async function commitProject(project: Project): Promise<void> {
-  if (!open.has(project.id)) {
-    await saveProject(project);
-    return;
-  }
-  updateDocument(project);
-  writeDraft(project.id);
+	if (!open.has(project.id)) {
+		await saveProject(project);
+		return;
+	}
+	updateDocument(project);
+	writeDraft(project.id);
 }
 
 /** What the editor's autosave timer fires. On the desktop that's the recovery
@@ -152,88 +152,88 @@ export async function commitProject(project: Project): Promise<void> {
  * dirty until they do. In the browser there is no file to be behind, so this
  * *is* the save, and it clears the flag. */
 export function writeDraft(id: string): void {
-  const state = open.get(id);
-  if (!state || !state.dirty) return;
-  if (isFileBased) {
-    void backend.writeRecovery?.(state.project);
-  } else {
-    void saveProject(state.project);
-    set(id, { ...state, dirty: false });
-  }
+	const state = open.get(id);
+	if (!state || !state.dirty) return;
+	if (isFileBased) {
+		void backend.writeRecovery?.(state.project);
+	} else {
+		void saveProject(state.project);
+		set(id, { ...state, dirty: false });
+	}
 }
 
 /** Writes the document to its file, asking where to put it the first time.
  * Returns false only when the writer cancels that dialog. */
 export async function saveDocument(id: string): Promise<boolean> {
-  const state = open.get(id);
-  if (!state) return false;
+	const state = open.get(id);
+	if (!state) return false;
 
-  if (!isFileBased) {
-    await saveProject(state.project);
-    return true;
-  }
+	if (!isFileBased) {
+		await saveProject(state.project);
+		return true;
+	}
 
-  const info = await backend.saveDocument?.(state.project);
-  if (!info) return false;
-  set(id, { ...state, path: info.path, dirty: false });
-  return true;
+	const info = await backend.saveDocument?.(state.project);
+	if (!info) return false;
+	set(id, { ...state, path: info.path, dirty: false });
+	return true;
 }
 
 /** Save As: always asks, and re-points the project at the new file. */
 export async function saveDocumentAs(id: string): Promise<boolean> {
-  const state = open.get(id);
-  if (!state || !isFileBased) return false;
+	const state = open.get(id);
+	if (!state || !isFileBased) return false;
 
-  const info = await backend.saveDocumentAs?.(state.project);
-  if (!info) return false;
-  set(id, { ...state, path: info.path, dirty: false });
-  return true;
+	const info = await backend.saveDocumentAs?.(state.project);
+	if (!info) return false;
+	set(id, { ...state, path: info.path, dirty: false });
+	return true;
 }
 
 /** Drops a document from memory when its tab closes. Anything unsaved stays
  * in the recovery copy — closing a tab is not a decision to discard work, and
  * reopening the project offers it back. */
 export function closeDocument(id: string): void {
-  const state = open.get(id);
-  if (!state) return;
-  if (isFileBased && state.dirty) backend.writeRecovery?.(state.project);
-  open.delete(id);
-  emit();
+	const state = open.get(id);
+	if (!state) return;
+	if (isFileBased && state.dirty) backend.writeRecovery?.(state.project);
+	open.delete(id);
+	emit();
 }
 
 /** Throws away the unsaved edits and the recovery copy with them. */
 export async function discardDocument(id: string): Promise<void> {
-  await backend.discardRecovery?.(id);
-  open.delete(id);
-  emit();
+	await backend.discardRecovery?.(id);
+	open.delete(id);
+	emit();
 }
 
 // ---------- Opening files ----------
 
 export function openFileDialog(): Promise<DocumentInfo | null> {
-  return backend.openDocument?.() ?? Promise.resolve(null);
+	return backend.openDocument?.() ?? Promise.resolve(null);
 }
 
 export function openFilePath(path: string): Promise<DocumentInfo | null> {
-  return backend.openDocumentPath?.(path) ?? Promise.resolve(null);
+	return backend.openDocumentPath?.(path) ?? Promise.resolve(null);
 }
 
 // ---------- Recovery ----------
 
 export function listRecoveries(): Promise<RecoveryInfo[]> {
-  return backend.listRecoveries?.() ?? Promise.resolve([]);
+	return backend.listRecoveries?.() ?? Promise.resolve([]);
 }
 
 /** Restores recovered work as the open copy of that project — dirty, because
  * by definition it isn't in the file yet. */
 export async function recover(id: string): Promise<Project | null> {
-  const project = await backend.loadRecovery?.(id);
-  if (!project) return null;
-  const info = await backend.documentInfo?.(id);
-  set(id, { project, path: info?.path ?? null, dirty: true });
-  return project;
+	const project = await backend.loadRecovery?.(id);
+	if (!project) return null;
+	const info = await backend.documentInfo?.(id);
+	set(id, { project, path: info?.path ?? null, dirty: true });
+	return project;
 }
 
 export function discardRecovery(id: string): Promise<void> {
-  return backend.discardRecovery?.(id) ?? Promise.resolve();
+	return backend.discardRecovery?.(id) ?? Promise.resolve();
 }

@@ -6,12 +6,18 @@ import { FilmSlate, Television } from '@phosphor-icons/react';
 import type { ProjectKind } from '@/model/types';
 
 interface Props {
-  kind: ProjectKind;
-  size?: number;
-  weight?: 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
+	kind: ProjectKind;
+	size?: number;
+	weight?: 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
 }
 
 export default function KindIcon({ kind, size = 16, weight = 'regular' }: Props) {
-  const Icon = kind === 'show' ? Television : FilmSlate;
-  return <Icon size={size} weight={weight} aria-hidden />;
+	const Icon = kind === 'show' ? Television : FilmSlate;
+	return (
+		<Icon
+			size={size}
+			weight={weight}
+			aria-hidden
+		/>
+	);
 }

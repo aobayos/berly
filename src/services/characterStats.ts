@@ -4,90 +4,87 @@ import type { Script, ScriptElement } from '@/model/types';
 import { plainResolver, type ResolveName } from '@/services/characterAliases';
 
 export interface CharacterStat {
-  name: string;
-  firstElementId: string;
-  sceneCount: number;
-  dialogueCount: number;
+	name: string;
+	firstElementId: string;
+	sceneCount: number;
+	dialogueCount: number;
 }
 
 /** `resolve` turns a cue into the character it stands for — see
  * characterAliases.ts; without a Bible, only the slash convention applies. */
-export function characterStats(
-  elements: ScriptElement[],
-  resolve: ResolveName = plainResolver
-): CharacterStat[] {
-  const stats = new Map<
-    string,
-    { firstElementId: string; sceneCount: number; dialogueCount: number; lastSceneIndex: number }
-  >();
-  let currentCharacter: string | null = null;
-  let sceneIndex = -1;
+export function characterStats(elements: ScriptElement[], resolve: ResolveName = plainResolver): CharacterStat[] {
+	const stats = new Map<
+		string,
+		{ firstElementId: string; sceneCount: number; dialogueCount: number; lastSceneIndex: number }
+	>();
+	let currentCharacter: string | null = null;
+	let sceneIndex = -1;
 
-  for (const el of elements) {
-    if (el.type === 'scene') {
-      sceneIndex++;
-      currentCharacter = null;
-      continue;
-    }
+	for (const el of elements) {
+		if (el.type === 'scene') {
+			sceneIndex++;
+			currentCharacter = null;
+			continue;
+		}
 
-    if (el.type === 'character') {
-      const name = resolve(el.text);
-      currentCharacter = name || null;
-      if (currentCharacter) {
-        const s = stats.get(currentCharacter) ?? {
-          firstElementId: el.id,
-          sceneCount: 0,
-          dialogueCount: 0,
-          lastSceneIndex: -1,
-        };
-        if (s.lastSceneIndex !== sceneIndex) {
-          s.sceneCount++;
-          s.lastSceneIndex = sceneIndex;
-        }
-        stats.set(currentCharacter, s);
-      }
-      continue;
-    }
+		if (el.type === 'character') {
+			const name = resolve(el.text);
+			currentCharacter = name || null;
+			if (currentCharacter) {
+				const s = stats.get(currentCharacter) ?? {
+					firstElementId: el.id,
+					sceneCount: 0,
+					dialogueCount: 0,
+					lastSceneIndex: -1,
+				};
+				if (s.lastSceneIndex !== sceneIndex) {
+					s.sceneCount++;
+					s.lastSceneIndex = sceneIndex;
+				}
+				stats.set(currentCharacter, s);
+			}
+			continue;
+		}
 
-    // Lyrics are dialogue that happens to be sung — they belong to the cue
-    // above them and count as that character's lines.
-    if ((el.type === 'dialogue' || el.type === 'lyrics') && currentCharacter) {
-      const s = stats.get(currentCharacter);
-      if (s) s.dialogueCount++;
-      continue;
-    }
+		// Lyrics are dialogue that happens to be sung — they belong to the cue
+		// above them and count as that character's lines.
+		if ((el.type === 'dialogue' || el.type === 'lyrics') && currentCharacter) {
+			const s = stats.get(currentCharacter);
+			if (s) s.dialogueCount++;
+			continue;
+		}
 
-    if (el.type !== 'parenthetical') {
-      // Anything else (action, shot, transition, centered) ends the block.
-      currentCharacter = null;
-    }
-  }
+		if (el.type !== 'parenthetical') {
+			// Anything else (action, shot, transition, centered) ends the block.
+			currentCharacter = null;
+		}
+	}
 
-  return [...stats.entries()]
-    .map(([name, s]) => ({
-      name,
-      firstElementId: s.firstElementId,
-      sceneCount: s.sceneCount,
-      dialogueCount: s.dialogueCount,
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+	return [...stats.entries()]
+		.map(([name, s]) => ({
+			name,
+			firstElementId: s.firstElementId,
+			sceneCount: s.sceneCount,
+			dialogueCount: s.dialogueCount,
+		}))
+		.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /** Totals scene/dialogue counts for every character across every script in
  * a project (e.g. all episodes of a show) — used by the Bible page, which
  * is project-level rather than tied to one script. */
 export function aggregateCharacterStats(
-  scripts: Script[],
-  resolve: ResolveName = plainResolver
+	scripts: Script[],
+	resolve: ResolveName = plainResolver,
 ): Map<string, { sceneCount: number; dialogueCount: number }> {
-  const totals = new Map<string, { sceneCount: number; dialogueCount: number }>();
-  for (const script of scripts) {
-    for (const stat of characterStats(script.elements, resolve)) {
-      const existing = totals.get(stat.name) ?? { sceneCount: 0, dialogueCount: 0 };
-      existing.sceneCount += stat.sceneCount;
-      existing.dialogueCount += stat.dialogueCount;
-      totals.set(stat.name, existing);
-    }
-  }
-  return totals;
+	const totals = new Map<string, { sceneCount: number; dialogueCount: number }>();
+	for (const script of scripts) {
+		for (const stat of characterStats(script.elements, resolve)) {
+			const existing = totals.get(stat.name) ?? { sceneCount: 0, dialogueCount: 0 };
+			existing.sceneCount += stat.sceneCount;
+			existing.dialogueCount += stat.dialogueCount;
+			totals.set(stat.name, existing);
+		}
+	}
+	return totals;
 }

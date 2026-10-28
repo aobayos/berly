@@ -1,44 +1,36 @@
 export type ElementType =
-  | 'scene'
-  | 'action'
-  | 'character'
-  | 'parenthetical'
-  | 'dialogue'
-  | 'transition'
-  | 'shot'
-  | 'lyrics'
-  | 'centered';
+	'scene' | 'action' | 'character' | 'parenthetical' | 'dialogue' | 'transition' | 'shot' | 'lyrics' | 'centered';
 
 export type ProjectKind = 'movie' | 'show';
 
 export interface ScriptElement {
-  id: string;
-  type: ElementType;
-  text: string;
-  /** The writer's note on this line — a reminder, a reader's comment. Never
-   * part of the page: it takes no room, and neither the PDF nor print
-   * carries it. Absent when there is none, never an empty string. */
-  note?: string;
-  /** Scene headings only: what happens in the scene, written on its card in
-   * the outline. Not part of the page either. Absent when there is none. */
-  synopsis?: string;
+	id: string;
+	type: ElementType;
+	text: string;
+	/** The writer's note on this line — a reminder, a reader's comment. Never
+	 * part of the page: it takes no room, and neither the PDF nor print
+	 * carries it. Absent when there is none, never an empty string. */
+	note?: string;
+	/** Scene headings only: what happens in the scene, written on its card in
+	 * the outline. Not part of the page either. Absent when there is none. */
+	synopsis?: string;
 }
 
 /** One screenplay document: the whole film for a movie, one episode for a show. */
 export interface Script {
-  id: string;
-  name: string;
-  elements: ScriptElement[];
-  createdAt: number;
-  updatedAt: number;
+	id: string;
+	name: string;
+	elements: ScriptElement[];
+	createdAt: number;
+	updatedAt: number;
 }
 
 export interface TitlePage {
-  title: string;
-  credit: string;
-  author: string;
-  contact: string;
-  draftDate: string;
+	title: string;
+	credit: string;
+	author: string;
+	contact: string;
+	draftDate: string;
 }
 
 export type BibleKind = 'character' | 'location';
@@ -52,19 +44,19 @@ export type BibleKind = 'character' | 'location';
  * the writer's own text and is left exactly as typed, in whichever language
  * they typed it. */
 export interface SheetField {
-  id: string;
-  labelKey?: string;
-  label: string;
-  value: string;
-  /** Renders as a textarea rather than a single-line input. */
-  multiline?: boolean;
+	id: string;
+	labelKey?: string;
+	label: string;
+	value: string;
+	/** Renders as a textarea rather than a single-line input. */
+	multiline?: boolean;
 }
 
 export interface SheetSection {
-  id: string;
-  titleKey?: string;
-  title: string;
-  fields: SheetField[];
+	id: string;
+	titleKey?: string;
+	title: string;
+	fields: SheetField[];
 }
 
 /** A character or location a writer has declared in the project Bible —
@@ -72,128 +64,128 @@ export interface SheetSection {
  * added to a name already used in the script. Names are normalized
  * uppercase, matching extractCharacters/extractPlaces. */
 export interface BibleEntry {
-  name: string;
-  kind: BibleKind;
-  note: string;
-  /** The full sheet. Absent on entries created before sheets existed and on
-   * ones the writer has never opened — seeded from the project template on
-   * first edit rather than eagerly, so untouched entries stay empty. */
-  sheet?: SheetSection[];
-  /** Characters only: other names the same person goes by in cues (a hero
-   * name, a nickname), upper case like the name itself. Counted as this
-   * entry everywhere; absent on entries that have none. */
-  aliases?: string[];
+	name: string;
+	kind: BibleKind;
+	note: string;
+	/** The full sheet. Absent on entries created before sheets existed and on
+	 * ones the writer has never opened — seeded from the project template on
+	 * first edit rather than eagerly, so untouched entries stay empty. */
+	sheet?: SheetSection[];
+	/** Characters only: other names the same person goes by in cues (a hero
+	 * name, a nickname), upper case like the name itself. Counted as this
+	 * entry everywhere; absent on entries that have none. */
+	aliases?: string[];
 }
 
 /** The layout new sheets of each kind start from. Seeded with the built-in
  * sheet, and overwritten when the writer saves a sheet's layout as default. */
 export interface SheetTemplates {
-  character: SheetSection[];
-  location: SheetSection[];
+	character: SheetSection[];
+	location: SheetSection[];
 }
 
 export interface Project {
-  id: string;
-  kind: ProjectKind;
-  name: string;
-  titlePage: TitlePage;
-  scripts: Script[];
-  bible: BibleEntry[];
-  /** Absent until the first sheet is opened — see sheetTemplate(). */
-  sheetTemplates?: SheetTemplates;
-  createdAt: number;
-  updatedAt: number;
+	id: string;
+	kind: ProjectKind;
+	name: string;
+	titlePage: TitlePage;
+	scripts: Script[];
+	bible: BibleEntry[];
+	/** Absent until the first sheet is opened — see sheetTemplate(). */
+	sheetTemplates?: SheetTemplates;
+	createdAt: number;
+	updatedAt: number;
 }
 
 export interface ProjectMeta {
-  id: string;
-  kind: ProjectKind;
-  name: string;
-  scriptCount: number;
-  sceneCount: number;
-  updatedAt: number;
+	id: string;
+	kind: ProjectKind;
+	name: string;
+	scriptCount: number;
+	sceneCount: number;
+	updatedAt: number;
 }
 
 /** A project that lives in a real file on disk. Desktop only: the browser
  * can't write to arbitrary paths, so the web build keeps the id-addressed
  * localStorage library instead (see src/services/storage/web.ts). */
 export interface DocumentInfo {
-  id: string;
-  /** Absolute path of the .berly file. */
-  path: string;
-  name: string;
-  kind: ProjectKind;
+	id: string;
+	/** Absolute path of the .berly file. */
+	path: string;
+	name: string;
+	kind: ProjectKind;
 }
 
 /** Unsaved work found on disk after a crash — written continuously beside
  * the document while the writer types (see electron/documents.ts). */
 export interface RecoveryInfo {
-  id: string;
-  name: string;
-  /** The document it belongs to, or null when it was never saved anywhere. */
-  path: string | null;
-  savedAt: number;
+	id: string;
+	name: string;
+	/** The document it belongs to, or null when it was never saved anywhere. */
+	path: string | null;
+	savedAt: number;
 }
 
 /** Shape shared by every persistence backend (localStorage on the web,
  * Electron IPC on desktop) — see src/services/storage/index.ts and electron/preload.cts. */
 /** A screenplay file the writer picked, before anything has parsed it. */
 export interface ImportedFile {
-  name: string;
-  text: string;
+	name: string;
+	text: string;
 }
 
 export interface StorageBackend {
-  listProjects(): Promise<ProjectMeta[]>;
-  loadProject(id: string): Promise<Project | null>;
-  saveProject(project: Project): Promise<void>;
-  deleteProject(id: string): Promise<void>;
-  importProject(json: string): Promise<Project>;
-  /** Only present in the Electron desktop build (electron/preload.cts) —
-   * builds the PDF directly from project/script data and writes it via a
-   * native save dialog, rather than window.print()'s OS print dialog. */
-  exportPdf?(project: Project, scriptId: string, filename: string): Promise<void>;
+	listProjects(): Promise<ProjectMeta[]>;
+	loadProject(id: string): Promise<Project | null>;
+	saveProject(project: Project): Promise<void>;
+	deleteProject(id: string): Promise<void>;
+	importProject(json: string): Promise<Project>;
+	/** Only present in the Electron desktop build (electron/preload.cts) —
+	 * builds the PDF directly from project/script data and writes it via a
+	 * native save dialog, rather than window.print()'s OS print dialog. */
+	exportPdf?(project: Project, scriptId: string, filename: string): Promise<void>;
 
-  // ----- Document files: present only in the desktop build -----
-  // src/services/storage/documents.ts checks for openDocument to decide whether the running
-  // build is file-based at all, so these travel as a group.
+	// ----- Document files: present only in the desktop build -----
+	// src/services/storage/documents.ts checks for openDocument to decide whether the running
+	// build is file-based at all, so these travel as a group.
 
-  /** Native open dialog. Null when the writer cancels or the file is junk. */
-  openDocument?(): Promise<DocumentInfo | null>;
-  /** Opens a known path — a recent entry, or a file handed over by the OS. */
-  openDocumentPath?(path: string): Promise<DocumentInfo | null>;
-  /** Writes to the project's own file, falling back to the Save As dialog
-   * when it has never been saved. Null when that dialog is cancelled. */
-  saveDocument?(project: Project): Promise<DocumentInfo | null>;
-  saveDocumentAs?(project: Project): Promise<DocumentInfo | null>;
-  /** The file backing an open project, or null while it is still untitled. */
-  documentInfo?(id: string): Promise<DocumentInfo | null>;
+	/** Native open dialog. Null when the writer cancels or the file is junk. */
+	openDocument?(): Promise<DocumentInfo | null>;
+	/** Opens a known path — a recent entry, or a file handed over by the OS. */
+	openDocumentPath?(path: string): Promise<DocumentInfo | null>;
+	/** Writes to the project's own file, falling back to the Save As dialog
+	 * when it has never been saved. Null when that dialog is cancelled. */
+	saveDocument?(project: Project): Promise<DocumentInfo | null>;
+	saveDocumentAs?(project: Project): Promise<DocumentInfo | null>;
+	/** The file backing an open project, or null while it is still untitled. */
+	documentInfo?(id: string): Promise<DocumentInfo | null>;
 
-  /** Native picker for a screenplay to import (.fountain/.fdx). Returns the
-   * file's name and text rather than a Project — parsing belongs in the
-   * renderer, where the format modules live. Null when cancelled.
-   * The browser build has no equivalent; App.tsx uses a file input there. */
-  pickScreenplay?(): Promise<ImportedFile | null>;
+	/** Native picker for a screenplay to import (.fountain/.fdx). Returns the
+	 * file's name and text rather than a Project — parsing belongs in the
+	 * renderer, where the format modules live. Null when cancelled.
+	 * The browser build has no equivalent; App.tsx uses a file input there. */
+	pickScreenplay?(): Promise<ImportedFile | null>;
 
-  /** Background copy of in-progress work; cheap enough to call on a timer. */
-  writeRecovery?(project: Project): Promise<void>;
-  listRecoveries?(): Promise<RecoveryInfo[]>;
-  loadRecovery?(id: string): Promise<Project | null>;
-  discardRecovery?(id: string): Promise<void>;
+	/** Background copy of in-progress work; cheap enough to call on a timer. */
+	writeRecovery?(project: Project): Promise<void>;
+	listRecoveries?(): Promise<RecoveryInfo[]>;
+	loadRecovery?(id: string): Promise<Project | null>;
+	discardRecovery?(id: string): Promise<void>;
 }
 
 /** Order is load-bearing: it drives both the type chooser and Ctrl+1…9, so
  * the six original types keep their existing positions. */
 export const ELEMENT_TYPES: ElementType[] = [
-  'scene',
-  'action',
-  'character',
-  'dialogue',
-  'parenthetical',
-  'transition',
-  'shot',
-  'lyrics',
-  'centered',
+	'scene',
+	'action',
+	'character',
+	'dialogue',
+	'parenthetical',
+	'transition',
+	'shot',
+	'lyrics',
+	'centered',
 ];
 
 /** The element that logically follows each type when Enter is pressed.
@@ -201,54 +193,50 @@ export const ELEMENT_TYPES: ElementType[] = [
  * be followed by almost anything) are absent — there Enter opens the type
  * chooser instead. */
 export const NEXT_ELEMENT_TYPE: Partial<Record<ElementType, ElementType>> = {
-  scene: 'action',
-  character: 'dialogue',
-  parenthetical: 'dialogue',
-  transition: 'scene',
-  shot: 'action',
-  // A song runs over several lines, so Enter stays in lyrics.
-  lyrics: 'lyrics',
+	scene: 'action',
+	character: 'dialogue',
+	parenthetical: 'dialogue',
+	transition: 'scene',
+	shot: 'action',
+	// A song runs over several lines, so Enter stays in lyrics.
+	lyrics: 'lyrics',
 };
 
 export function newId(): string {
-  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+	return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 }
 
 export function newElement(type: ElementType, text = ''): ScriptElement {
-  return { id: newId(), type, text };
+	return { id: newId(), type, text };
 }
 
 export function newScript(name: string): Script {
-  const now = Date.now();
-  return {
-    id: newId(),
-    name,
-    elements: [newElement('scene')],
-    createdAt: now,
-    updatedAt: now,
-  };
+	const now = Date.now();
+	return {
+		id: newId(),
+		name,
+		elements: [newElement('scene')],
+		createdAt: now,
+		updatedAt: now,
+	};
 }
 
-export function newProject(
-  name: string,
-  kind: ProjectKind,
-  firstScriptName: string
-): Project {
-  const now = Date.now();
-  return {
-    id: newId(),
-    kind,
-    name,
-    titlePage: {
-      title: name,
-      credit: 'Written by',
-      author: '',
-      contact: '',
-      draftDate: '',
-    },
-    scripts: [newScript(firstScriptName)],
-    bible: [],
-    createdAt: now,
-    updatedAt: now,
-  };
+export function newProject(name: string, kind: ProjectKind, firstScriptName: string): Project {
+	const now = Date.now();
+	return {
+		id: newId(),
+		kind,
+		name,
+		titlePage: {
+			title: name,
+			credit: 'Written by',
+			author: '',
+			contact: '',
+			draftDate: '',
+		},
+		scripts: [newScript(firstScriptName)],
+		bible: [],
+		createdAt: now,
+		updatedAt: now,
+	};
 }

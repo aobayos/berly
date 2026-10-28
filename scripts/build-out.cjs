@@ -14,17 +14,13 @@ const output = path.join(os.tmpdir(), 'berly-release');
 // a shell, and doing so fails silently with no output at all.
 const cli = require.resolve('electron-builder/cli.js');
 
-const result = spawnSync(
-  process.execPath,
-  [cli, `--config.directories.output=${output}`],
-  { stdio: 'inherit' }
-);
+const result = spawnSync(process.execPath, [cli, `--config.directories.output=${output}`], { stdio: 'inherit' });
 
 if (result.error) {
-  console.error(`Could not run electron-builder: ${result.error.message}`);
-  process.exit(1);
+	console.error(`Could not run electron-builder: ${result.error.message}`);
+	process.exit(1);
 }
 if (result.status === 0) {
-  console.log(`\nInstaller written to ${output}`);
+	console.log(`\nInstaller written to ${output}`);
 }
 process.exit(result.status ?? 1);

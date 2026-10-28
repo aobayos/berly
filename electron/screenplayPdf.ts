@@ -17,75 +17,70 @@ const LINE_HEIGHT = 12; // 6 lines/inch, standard screenplay pitch
 const CHARS_PER_INCH = 10; // Courier 12pt is exactly 7.2pt/char = 10 cpi
 
 interface Layout {
-  leftIn: number;
-  widthIn: number;
-  align?: 'left' | 'right' | 'center';
-  bold?: boolean;
-  italic?: boolean;
-  upper?: boolean;
-  blankBefore: number;
+	leftIn: number;
+	widthIn: number;
+	align?: 'left' | 'right' | 'center';
+	bold?: boolean;
+	italic?: boolean;
+	upper?: boolean;
+	blankBefore: number;
 }
 
 // Mirrors the on-screen margins in src/index.css (.el-scene, .el-character, etc).
 const LAYOUT: Record<ElementType, Layout> = {
-  scene: { leftIn: 0, widthIn: CONTENT_WIDTH_IN, bold: true, upper: true, blankBefore: 2 },
-  action: { leftIn: 0, widthIn: CONTENT_WIDTH_IN, blankBefore: 1 },
-  character: { leftIn: 2.2, widthIn: 3.3, upper: true, blankBefore: 1 },
-  parenthetical: { leftIn: 1.6, widthIn: 2.5, blankBefore: 0 },
-  dialogue: { leftIn: 1.0, widthIn: 3.5, blankBefore: 0 },
-  transition: { leftIn: 0, widthIn: CONTENT_WIDTH_IN, align: 'right', upper: true, blankBefore: 1 },
-  shot: { leftIn: 0, widthIn: CONTENT_WIDTH_IN, upper: true, blankBefore: 1 },
-  lyrics: { leftIn: 1.0, widthIn: 3.5, italic: true, blankBefore: 0 },
-  centered: { leftIn: 0, widthIn: CONTENT_WIDTH_IN, align: 'center', blankBefore: 1 },
+	scene: { leftIn: 0, widthIn: CONTENT_WIDTH_IN, bold: true, upper: true, blankBefore: 2 },
+	action: { leftIn: 0, widthIn: CONTENT_WIDTH_IN, blankBefore: 1 },
+	character: { leftIn: 2.2, widthIn: 3.3, upper: true, blankBefore: 1 },
+	parenthetical: { leftIn: 1.6, widthIn: 2.5, blankBefore: 0 },
+	dialogue: { leftIn: 1.0, widthIn: 3.5, blankBefore: 0 },
+	transition: { leftIn: 0, widthIn: CONTENT_WIDTH_IN, align: 'right', upper: true, blankBefore: 1 },
+	shot: { leftIn: 0, widthIn: CONTENT_WIDTH_IN, upper: true, blankBefore: 1 },
+	lyrics: { leftIn: 1.0, widthIn: 3.5, italic: true, blankBefore: 0 },
+	centered: { leftIn: 0, widthIn: CONTENT_WIDTH_IN, align: 'center', blankBefore: 1 },
 };
 
 function courierFace(layout: Layout): string {
-  if (layout.bold && layout.italic) return 'Courier-BoldOblique';
-  if (layout.bold) return 'Courier-Bold';
-  if (layout.italic) return 'Courier-Oblique';
-  return 'Courier';
+	if (layout.bold && layout.italic) return 'Courier-BoldOblique';
+	if (layout.bold) return 'Courier-Bold';
+	if (layout.italic) return 'Courier-Oblique';
+	return 'Courier';
 }
 
 function wrapText(text: string, maxChars: number): string[] {
-  const words = text.split(/\s+/).filter(Boolean);
-  const lines: string[] = [];
-  let current = '';
-  for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word;
-    if (candidate.length > maxChars && current) {
-      lines.push(current);
-      current = word;
-    } else {
-      current = candidate;
-    }
-  }
-  lines.push(current);
-  return lines;
+	const words = text.split(/\s+/).filter(Boolean);
+	const lines: string[] = [];
+	let current = '';
+	for (const word of words) {
+		const candidate = current ? `${current} ${word}` : word;
+		if (candidate.length > maxChars && current) {
+			lines.push(current);
+			current = word;
+		} else {
+			current = candidate;
+		}
+	}
+	lines.push(current);
+	return lines;
 }
 
 /** Elements that only introduce what follows them, and so must never end a
  * page. Same list as KEEP_WITH_NEXT in src/services/pagination.ts, which
  * paginates the screen — keep them in step. */
-const KEEP_WITH_NEXT: ReadonlySet<ElementType> = new Set<ElementType>([
-  'scene',
-  'shot',
-  'character',
-  'parenthetical',
-]);
+const KEEP_WITH_NEXT: ReadonlySet<ElementType> = new Set<ElementType>(['scene', 'shot', 'character', 'parenthetical']);
 
 function wrappedLines(el: Script['elements'][number]): string[] {
-  const layout = LAYOUT[el.type];
-  const text = el.text.trim();
-  const displayText = layout.upper ? text.toUpperCase() : text;
-  const maxChars = Math.max(1, Math.floor(layout.widthIn * CHARS_PER_INCH));
-  return wrapText(displayText, maxChars);
+	const layout = LAYOUT[el.type];
+	const text = el.text.trim();
+	const displayText = layout.upper ? text.toUpperCase() : text;
+	const maxChars = Math.max(1, Math.floor(layout.widthIn * CHARS_PER_INCH));
+	return wrapText(displayText, maxChars);
 }
 
 function nextNonEmpty(elements: Script['elements'], from: number): number {
-  for (let i = from + 1; i < elements.length; i++) {
-    if (elements[i].text.trim()) return i;
-  }
-  return -1;
+	for (let i = from + 1; i < elements.length; i++) {
+		if (elements[i].text.trim()) return i;
+	}
+	return -1;
 }
 
 /** Lines that have to fit for element `i` to start on this page: all of its
@@ -93,109 +88,104 @@ function nextNonEmpty(elements: Script['elements'], from: number): number {
  * to the first line of the element they introduce. A cue then never ends a
  * page without its line, nor a heading without its scene. */
 function linesToKeep(elements: Script['elements'], i: number): number {
-  let total = wrappedLines(elements[i]).length;
-  let k = i;
-  while (KEEP_WITH_NEXT.has(elements[k].type)) {
-    k = nextNonEmpty(elements, k);
-    if (k === -1) break;
-    const el = elements[k];
-    total += LAYOUT[el.type].blankBefore;
-    if (!KEEP_WITH_NEXT.has(el.type)) {
-      total += 1;
-      break;
-    }
-    total += wrappedLines(el).length;
-  }
-  return total;
+	let total = wrappedLines(elements[i]).length;
+	let k = i;
+	while (KEEP_WITH_NEXT.has(elements[k].type)) {
+		k = nextNonEmpty(elements, k);
+		if (k === -1) break;
+		const el = elements[k];
+		total += LAYOUT[el.type].blankBefore;
+		if (!KEEP_WITH_NEXT.has(el.type)) {
+			total += 1;
+			break;
+		}
+		total += wrappedLines(el).length;
+	}
+	return total;
 }
 
-export function writeScreenplayPdf(
-  project: Project,
-  script: Script,
-  filePath: string
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({
-      size: 'LETTER',
-      margins: { top: MARGIN_TOP, bottom: MARGIN_BOTTOM, left: MARGIN_LEFT, right: MARGIN_RIGHT },
-    });
-    const stream = fs.createWriteStream(filePath);
-    doc.pipe(stream);
-    stream.on('finish', resolve);
-    stream.on('error', reject);
+export function writeScreenplayPdf(project: Project, script: Script, filePath: string): Promise<void> {
+	return new Promise((resolve, reject) => {
+		const doc = new PDFDocument({
+			size: 'LETTER',
+			margins: { top: MARGIN_TOP, bottom: MARGIN_BOTTOM, left: MARGIN_LEFT, right: MARGIN_RIGHT },
+		});
+		const stream = fs.createWriteStream(filePath);
+		doc.pipe(stream);
+		stream.on('finish', resolve);
+		stream.on('error', reject);
 
-    drawTitlePage(doc, project, script);
-    doc.addPage();
-    drawScript(doc, script);
+		drawTitlePage(doc, project, script);
+		doc.addPage();
+		drawScript(doc, script);
 
-    doc.end();
-  });
+		doc.end();
+	});
 }
 
 function centered(doc: PDFKit.PDFDocument, text: string, y: number): void {
-  doc.text(text, MARGIN_LEFT, y, { width: CONTENT_WIDTH_IN * 72, align: 'center' });
+	doc.text(text, MARGIN_LEFT, y, { width: CONTENT_WIDTH_IN * 72, align: 'center' });
 }
 
 function drawTitlePage(doc: PDFKit.PDFDocument, project: Project, script: Script): void {
-  const tp = project.titlePage;
-  const title =
-    project.kind === 'show' && script.name ? `${tp.title || project.name} — ${script.name}` : tp.title;
+	const tp = project.titlePage;
+	const title = project.kind === 'show' && script.name ? `${tp.title || project.name} — ${script.name}` : tp.title;
 
-  let y = PAGE_HEIGHT * 0.35;
-  if (title) {
-    doc.font('Courier-Bold').fontSize(14);
-    centered(doc, title.toUpperCase(), y);
-    y += 40;
-  }
-  doc.font('Courier').fontSize(12);
-  if (tp.credit) {
-    centered(doc, tp.credit, y);
-    y += 20;
-  }
-  if (tp.author) {
-    centered(doc, tp.author, y);
-    y += 20;
-  }
+	let y = PAGE_HEIGHT * 0.35;
+	if (title) {
+		doc.font('Courier-Bold').fontSize(14);
+		centered(doc, title.toUpperCase(), y);
+		y += 40;
+	}
+	doc.font('Courier').fontSize(12);
+	if (tp.credit) {
+		centered(doc, tp.credit, y);
+		y += 20;
+	}
+	if (tp.author) {
+		centered(doc, tp.author, y);
+		y += 20;
+	}
 
-  let by = PAGE_HEIGHT - MARGIN_BOTTOM - 60;
-  if (tp.contact) {
-    doc.text(tp.contact, MARGIN_LEFT, by, { width: 3 * 72 });
-    by += 40;
-  }
-  if (tp.draftDate) {
-    doc.text(tp.draftDate, MARGIN_LEFT, by, { width: 3 * 72 });
-  }
+	let by = PAGE_HEIGHT - MARGIN_BOTTOM - 60;
+	if (tp.contact) {
+		doc.text(tp.contact, MARGIN_LEFT, by, { width: 3 * 72 });
+		by += 40;
+	}
+	if (tp.draftDate) {
+		doc.text(tp.draftDate, MARGIN_LEFT, by, { width: 3 * 72 });
+	}
 }
 
 function drawScript(doc: PDFKit.PDFDocument, script: Script): void {
-  let y = MARGIN_TOP;
+	let y = MARGIN_TOP;
 
-  function ensureRoom(lines: number): void {
-    if (y + lines * LINE_HEIGHT > PAGE_HEIGHT - MARGIN_BOTTOM) {
-      doc.addPage();
-      y = MARGIN_TOP;
-    }
-  }
+	function ensureRoom(lines: number): void {
+		if (y + lines * LINE_HEIGHT > PAGE_HEIGHT - MARGIN_BOTTOM) {
+			doc.addPage();
+			y = MARGIN_TOP;
+		}
+	}
 
-  script.elements.forEach((el, i) => {
-    const text = el.text.trim();
-    if (!text) return;
+	script.elements.forEach((el, i) => {
+		const text = el.text.trim();
+		if (!text) return;
 
-    const layout = LAYOUT[el.type];
-    const lines = wrappedLines(el);
-    const blank = i === 0 ? 0 : layout.blankBefore;
+		const layout = LAYOUT[el.type];
+		const lines = wrappedLines(el);
+		const blank = i === 0 ? 0 : layout.blankBefore;
 
-    ensureRoom(blank + linesToKeep(script.elements, i));
+		ensureRoom(blank + linesToKeep(script.elements, i));
 
-    y += blank * LINE_HEIGHT;
-    doc.font(courierFace(layout)).fontSize(12);
-    const x = MARGIN_LEFT + layout.leftIn * 72;
-    const width = layout.widthIn * 72;
+		y += blank * LINE_HEIGHT;
+		doc.font(courierFace(layout)).fontSize(12);
+		const x = MARGIN_LEFT + layout.leftIn * 72;
+		const width = layout.widthIn * 72;
 
-    for (const line of lines) {
-      ensureRoom(1);
-      doc.text(line, x, y, { width, align: layout.align ?? 'left', lineBreak: false });
-      y += LINE_HEIGHT;
-    }
-  });
+		for (const line of lines) {
+			ensureRoom(1);
+			doc.text(line, x, y, { width, align: layout.align ?? 'left', lineBreak: false });
+			y += LINE_HEIGHT;
+		}
+	});
 }
