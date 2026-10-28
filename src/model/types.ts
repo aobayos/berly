@@ -72,6 +72,10 @@ export interface BibleEntry {
    * ones the writer has never opened — seeded from the project template on
    * first edit rather than eagerly, so untouched entries stay empty. */
   sheet?: SheetSection[];
+  /** Characters only: other names the same person goes by in cues (a hero
+   * name, a nickname), upper case like the name itself. Counted as this
+   * entry everywhere; absent on entries that have none. */
+  aliases?: string[];
 }
 
 /** The layout new sheets of each kind start from. Seeded with the built-in

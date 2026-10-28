@@ -2,7 +2,9 @@
 // scripts as they stand: one episode in the editor's drawer, the whole
 // project on the project page. Every row leads back to the script.
 import { useMemo, useState, type ReactNode } from 'react';
+import type { BibleEntry } from '@/model/types';
 import { ELEMENT_TYPES } from '@/model/types';
+import { characterResolver } from '@/services/characterAliases';
 import { pageRanges, projectReport, type ReportPart } from '@/services/scriptReport';
 import { useI18n } from '@/i18n';
 
@@ -16,13 +18,24 @@ interface Props {
   series?: boolean;
   /** Drawer width: the less essential columns go. */
   compact?: boolean;
+  /** The project's Bible, so a character's aliases count as them. */
+  bible: BibleEntry[];
   onJump(elementId: string): void;
 }
 
-export default function ReportsView({ parts, series = false, compact = false, onJump }: Props) {
+export default function ReportsView({
+  parts,
+  series = false,
+  compact = false,
+  bible,
+  onJump,
+}: Props) {
   const { t, lang } = useI18n();
   const [tab, setTab] = useState<Tab>('overview');
-  const report = useMemo(() => projectReport(parts), [parts]);
+  const report = useMemo(
+    () => projectReport(parts, characterResolver(bible)),
+    [parts, bible]
+  );
   const where = (row: { pages: number[]; episodes: number[] }) =>
     pageRanges(series ? row.episodes : row.pages);
   const whereLabel = series ? t.reportEpisodes : t.pagesTab;

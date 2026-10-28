@@ -1,7 +1,7 @@
 // Per-character breakdown: how many scenes and dialogue lines each
 // character has, either within one script or totalled across a project.
 import type { Script, ScriptElement } from '@/model/types';
-import { characterName } from '@/services/suggestions';
+import { plainResolver, type ResolveName } from '@/services/characterAliases';
 
 export interface CharacterStat {
   name: string;
@@ -10,7 +10,12 @@ export interface CharacterStat {
   dialogueCount: number;
 }
 
-export function characterStats(elements: ScriptElement[]): CharacterStat[] {
+/** `resolve` turns a cue into the character it stands for — see
+ * characterAliases.ts; without a Bible, only the slash convention applies. */
+export function characterStats(
+  elements: ScriptElement[],
+  resolve: ResolveName = plainResolver
+): CharacterStat[] {
   const stats = new Map<
     string,
     { firstElementId: string; sceneCount: number; dialogueCount: number; lastSceneIndex: number }
@@ -26,7 +31,7 @@ export function characterStats(elements: ScriptElement[]): CharacterStat[] {
     }
 
     if (el.type === 'character') {
-      const name = characterName(el.text);
+      const name = resolve(el.text);
       currentCharacter = name || null;
       if (currentCharacter) {
         const s = stats.get(currentCharacter) ?? {
@@ -72,11 +77,12 @@ export function characterStats(elements: ScriptElement[]): CharacterStat[] {
  * a project (e.g. all episodes of a show) — used by the Bible page, which
  * is project-level rather than tied to one script. */
 export function aggregateCharacterStats(
-  scripts: Script[]
+  scripts: Script[],
+  resolve: ResolveName = plainResolver
 ): Map<string, { sceneCount: number; dialogueCount: number }> {
   const totals = new Map<string, { sceneCount: number; dialogueCount: number }>();
   for (const script of scripts) {
-    for (const stat of characterStats(script.elements)) {
+    for (const stat of characterStats(script.elements, resolve)) {
       const existing = totals.get(stat.name) ?? { sceneCount: 0, dialogueCount: 0 };
       existing.sceneCount += stat.sceneCount;
       existing.dialogueCount += stat.dialogueCount;

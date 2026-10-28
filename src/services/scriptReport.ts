@@ -4,7 +4,8 @@
 // report never names a page the writer can't find.
 import type { ElementType, ScriptElement } from '@/model/types';
 import { ELEMENT_TYPES } from '@/model/types';
-import { characterName, sceneLocation } from '@/services/suggestions';
+import { sceneLocation } from '@/services/suggestions';
+import { plainResolver, type ResolveName } from '@/services/characterAliases';
 
 export interface CharacterReport {
   name: string;
@@ -55,10 +56,12 @@ export function countWords(text: string): number {
 }
 
 /** `pageStarts` is the index of the first element on each page, as measured
- * by ScriptPages; pages are numbered from 1. */
+ * by ScriptPages; pages are numbered from 1. `resolve` turns a cue into the
+ * character it stands for (see characterAliases.ts). */
 export function scriptReport(
   elements: ScriptElement[],
-  pageStarts: number[]
+  pageStarts: number[],
+  resolve: ResolveName = plainResolver
 ): ScriptReport {
   const elementCounts = Object.fromEntries(
     ELEMENT_TYPES.map((type) => [type, 0])
@@ -131,7 +134,7 @@ export function scriptReport(
     location?.pages.add(page);
 
     if (el.type === 'character') {
-      const name = characterName(el.text);
+      const name = resolve(el.text);
       speaker = null;
       if (!name) return;
       speaker = characters.get(name) ?? {
@@ -240,8 +243,11 @@ export interface ProjectReport extends Omit<ScriptReport, 'characters' | 'scenes
   locations: (LocationReport & { episodes: number[] })[];
 }
 
-export function projectReport(parts: ReportPart[]): ProjectReport {
-  const reports = parts.map((part) => scriptReport(part.elements, part.pageStarts));
+export function projectReport(
+  parts: ReportPart[],
+  resolve: ResolveName = plainResolver
+): ProjectReport {
+  const reports = parts.map((part) => scriptReport(part.elements, part.pageStarts, resolve));
   const single = parts.length === 1;
 
   const elementCounts = Object.fromEntries(ELEMENT_TYPES.map((type) => [type, 0])) as Record<

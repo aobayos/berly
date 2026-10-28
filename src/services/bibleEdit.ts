@@ -70,3 +70,34 @@ export function saveSheetTemplate(
 export function setTitlePage(project: Project, titlePage: TitlePage): Project {
   return touched(project, { titlePage });
 }
+
+/** Gives a character another name. A blank Bible entry under that name is
+ * folded in (removed); the caller checks aliasConflict() first, so a filled-in
+ * one never reaches here. */
+export function addAlias(project: Project, owner: string, alias: string): Project {
+  const normalized = alias.trim().toUpperCase();
+  if (!normalized || normalized === owner) return project;
+  const entry = project.bible.find((b) => b.kind === 'character' && b.name === owner);
+  if (entry?.aliases?.includes(normalized)) return project;
+  const bible = project.bible.filter((b) => !(b.kind === 'character' && b.name === normalized));
+  const withOwner = bible.some((b) => b.kind === 'character' && b.name === owner)
+    ? bible
+    : [...bible, { name: owner, kind: 'character' as const, note: '' }];
+  return touched(project, {
+    bible: withOwner.map((b) =>
+      b.kind === 'character' && b.name === owner
+        ? { ...b, aliases: [...(b.aliases ?? []), normalized] }
+        : b
+    ),
+  });
+}
+
+export function removeAlias(project: Project, owner: string, alias: string): Project {
+  return touched(project, {
+    bible: project.bible.map((b) =>
+      b.kind === 'character' && b.name === owner
+        ? { ...b, aliases: (b.aliases ?? []).filter((a) => a !== alias) }
+        : b
+    ),
+  });
+}
