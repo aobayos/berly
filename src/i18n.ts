@@ -142,6 +142,10 @@ const en = {
   // Reports
   reportsTab: 'Reports',
   reportOverview: 'Overview',
+  reportDialogue: 'Dialogue',
+  dialogueChartLabel: 'Who speaks on each page',
+  dialogueHint: 'Each bar is as tall as the words spoken on that page. Click one to go there.',
+  dialogueEmpty: 'No dialogue yet.',
   reportEmpty: 'Nothing to report yet — write a few lines first.',
   reportWords: 'Words',
   reportBalance: 'Dialogue and action',
@@ -474,6 +478,10 @@ const fr: Dict = {
 
   reportsTab: 'Rapports',
   reportOverview: 'Vue d’ensemble',
+  reportDialogue: 'Dialogues',
+  dialogueChartLabel: 'Qui parle à chaque page',
+  dialogueHint: 'Chaque barre est aussi haute que les mots dits sur cette page. Cliquez pour y aller.',
+  dialogueEmpty: 'Pas encore de dialogue.',
   reportEmpty: 'Rien à analyser pour l’instant — écrivez d’abord quelques lignes.',
   reportWords: 'Mots',
   reportBalance: 'Dialogue et action',

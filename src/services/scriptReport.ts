@@ -17,6 +17,15 @@ export interface CharacterReport {
   share: number;
   scenes: number;
   pages: number[];
+  /** Words of dialogue per page, with the cue that opens the first speech
+   * there — what the dialogue chart draws. */
+  byPage: PageDialogue[];
+}
+
+export interface PageDialogue {
+  page: number;
+  words: number;
+  elementId: string;
 }
 
 export interface SceneReport {
@@ -67,9 +76,10 @@ export function scriptReport(
     ELEMENT_TYPES.map((type) => [type, 0])
   ) as Record<ElementType, number>;
 
-  type CharacterAcc = Omit<CharacterReport, 'share' | 'scenes' | 'pages'> & {
+  type CharacterAcc = Omit<CharacterReport, 'share' | 'scenes' | 'pages' | 'byPage'> & {
     scenes: Set<number>;
     pages: Set<number>;
+    byPage: Map<number, PageDialogue>;
   };
   type LocationAcc = Omit<LocationReport, 'pages' | 'characters'> & {
     pages: Set<number>;
@@ -88,6 +98,7 @@ export function scriptReport(
   // The cue the current dialogue belongs to, and whether it has spoken yet.
   let speaker: CharacterAcc | null = null;
   let spoke = false;
+  let cueId = '';
 
   elements.forEach((el, i) => {
     while (page < pageStarts.length && pageStarts[page] <= i) page++;
@@ -144,9 +155,11 @@ export function scriptReport(
         words: 0,
         scenes: new Set(),
         pages: new Set(),
+        byPage: new Map(),
       };
       characters.set(name, speaker);
       spoke = false;
+      cueId = el.id;
       speaker.pages.add(page);
       if (scene) {
         speaker.scenes.add(scene.number);
@@ -165,6 +178,11 @@ export function scriptReport(
       }
       speaker.words += n;
       speaker.pages.add(page);
+      if (n > 0) {
+        const cell = speaker.byPage.get(page) ?? { page, words: 0, elementId: cueId };
+        cell.words += n;
+        speaker.byPage.set(page, cell);
+      }
       dialogueWords += n;
       return;
     }
@@ -188,6 +206,7 @@ export function scriptReport(
         share: dialogueWords > 0 ? c.words / dialogueWords : 0,
         scenes: c.scenes.size,
         pages: [...c.pages].sort((a, b) => a - b),
+        byPage: [...c.byPage.values()].sort((a, b) => a.page - b.page),
       }))
       .sort((a, b) => b.words - a.words || a.name.localeCompare(b.name)),
     scenes,
@@ -241,6 +260,21 @@ export interface ProjectReport extends Omit<ScriptReport, 'characters' | 'scenes
   characters: (CharacterReport & { episodes: number[] })[];
   scenes: (SceneReport & { episode: number })[];
   locations: (LocationReport & { episodes: number[] })[];
+  dialogue: DialogueChart;
+}
+
+/** Who speaks where, page by page — Trelby's dialogue chart. A series' pages
+ * are laid end to end, episode after episode. */
+export interface DialogueChart {
+  columns: { episode: number; page: number }[];
+  /** Characters with any dialogue, most words first. */
+  rows: {
+    name: string;
+    firstElementId: string;
+    words: number;
+    /** Only the columns where they speak, in order. */
+    cells: { column: number; words: number; elementId: string }[];
+  }[];
 }
 
 export function projectReport(
@@ -257,10 +291,21 @@ export function projectReport(
   const characters = new Map<string, CharacterReport & { episodes: number[] }>();
   const locations = new Map<string, LocationReport & { episodes: number[] }>();
   const scenes: (SceneReport & { episode: number })[] = [];
+  const columns: DialogueChart['columns'] = [];
+  const cells = new Map<string, DialogueChart['rows'][number]['cells']>();
   let dialogueWords = 0;
 
   reports.forEach((report, i) => {
     const episode = i + 1;
+    const offset = columns.length;
+    for (let page = 1; page <= report.pages; page++) columns.push({ episode, page });
+    for (const c of report.characters) {
+      const row = cells.get(c.name) ?? [];
+      for (const cell of c.byPage) {
+        row.push({ column: offset + cell.page - 1, words: cell.words, elementId: cell.elementId });
+      }
+      cells.set(c.name, row);
+    }
     for (const type of ELEMENT_TYPES) elementCounts[type] += report.elementCounts[type];
     dialogueWords += report.dialogueWords;
     scenes.push(...report.scenes.map((scene) => ({ ...scene, episode })));
@@ -268,7 +313,12 @@ export function projectReport(
     for (const c of report.characters) {
       const merged = characters.get(c.name);
       if (!merged) {
-        characters.set(c.name, { ...c, pages: single ? c.pages : [], episodes: [episode] });
+        characters.set(c.name, {
+          ...c,
+          pages: single ? c.pages : [],
+          byPage: single ? c.byPage : [],
+          episodes: [episode],
+        });
         continue;
       }
       merged.speeches += c.speeches;
@@ -289,6 +339,10 @@ export function projectReport(
     }
   });
 
+  const ranked = [...characters.values()]
+    .map((c) => ({ ...c, share: dialogueWords > 0 ? c.words / dialogueWords : 0 }))
+    .sort((a, b) => b.words - a.words || a.name.localeCompare(b.name));
+
   return {
     pages: reports.reduce((sum, r) => sum + r.pages, 0),
     words: reports.reduce((sum, r) => sum + r.words, 0),
@@ -303,12 +357,21 @@ export function projectReport(
       scenes: reports[i].scenes.length,
       words: reports[i].words,
     })),
-    characters: [...characters.values()]
-      .map((c) => ({ ...c, share: dialogueWords > 0 ? c.words / dialogueWords : 0 }))
-      .sort((a, b) => b.words - a.words || a.name.localeCompare(b.name)),
+    characters: ranked,
     scenes,
     locations: [...locations.values()].sort(
       (a, b) => b.scenes - a.scenes || a.name.localeCompare(b.name)
     ),
+    dialogue: {
+      columns,
+      rows: ranked
+        .filter((c) => c.words > 0)
+        .map((c) => ({
+          name: c.name,
+          firstElementId: c.firstElementId,
+          words: c.words,
+          cells: cells.get(c.name) ?? [],
+        })),
+    },
   };
 }

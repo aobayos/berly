@@ -6,9 +6,10 @@ import type { BibleEntry } from '@/model/types';
 import { ELEMENT_TYPES } from '@/model/types';
 import { characterResolver } from '@/services/characterAliases';
 import { pageRanges, projectReport, type ReportPart } from '@/services/scriptReport';
+import DialogueChart from '@/components/editor/DialogueChart';
 import { useI18n } from '@/i18n';
 
-type Tab = 'overview' | 'characters' | 'scenes' | 'locations';
+type Tab = 'overview' | 'characters' | 'dialogue' | 'scenes' | 'locations';
 
 interface Props {
   /** The scripts reported on, each with the breaks ScriptPages measured. */
@@ -70,6 +71,7 @@ export default function ReportsView({
   const tabs: [Tab, string][] = [
     ['overview', t.reportOverview],
     ['characters', t.bibleCharacters],
+    ['dialogue', t.reportDialogue],
     ['scenes', t.sceneNavigator],
     ['locations', t.bibleLocations],
   ];
@@ -245,6 +247,10 @@ export default function ReportsView({
             ))}
           </tbody>
         </table>
+      )}
+
+      {tab === 'dialogue' && (
+        <DialogueChart chart={report.dialogue} series={series} onJump={onJump} />
       )}
 
       {tab === 'scenes' && (

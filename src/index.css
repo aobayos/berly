@@ -2625,6 +2625,114 @@ a:focus-visible,
   border-bottom-color: var(--accent);
 }
 
+/* The dialogue chart: one strip per character on a shared page scale, the
+   name on the left and the total on the right. */
+.dialogue-readout {
+  min-height: 20px;
+}
+
+.dialogue-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dialogue-row {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr) 56px;
+  gap: 10px;
+  align-items: end;
+}
+
+.reports-compact .dialogue-row {
+  grid-template-columns: 96px minmax(0, 1fr);
+}
+
+.reports-compact .dialogue-total {
+  display: none;
+}
+
+.dialogue-name {
+  align-self: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  font-size: 12.5px;
+}
+
+.dialogue-strip {
+  position: relative;
+  display: grid;
+  column-gap: 1px;
+  height: 28px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* The whole column is the hit target; the bar sits on the baseline. */
+.dialogue-cell {
+  grid-row: 1;
+  display: flex;
+  align-items: flex-end;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.dialogue-cell > span {
+  display: block;
+  width: 100%;
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  background: var(--accent);
+}
+
+.dialogue-cell.is-hovered > span {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+
+.dialogue-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px dashed var(--text-dim);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.dialogue-total {
+  align-self: center;
+  text-align: right;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.dialogue-head {
+  margin-bottom: 2px;
+}
+
+.dialogue-axis-row {
+  margin-top: 4px;
+}
+
+.dialogue-axis {
+  position: relative;
+  height: 16px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.dialogue-axis > span {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
 .report-tiles {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
