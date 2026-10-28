@@ -33,6 +33,8 @@ import BibleView from '@/app/BibleView';
 import ReportsView from '@/components/editor/ReportsView';
 import MeasuredPages from '@/components/editor/MeasuredPages';
 import TitlePageView from '@/components/editor/TitlePageView';
+import GoalsView from '@/app/GoalsView';
+import { useGoals } from '@/services/storage/goals';
 
 /** Same pause as the editor's autosave. */
 const DRAFT_DELAY = 1500;
@@ -45,8 +47,9 @@ export default function ProjectPage() {
   const { importEpisode } = useShellActions();
   const [loading, setLoading] = useState(true);
   const [missing, setMissing] = useState(false);
-  // 'script' is the script or episode list; the rest mirror the editor.
-  const [section, setSection] = useState<EditorView>('script');
+  // 'script' is the script or episode list; the rest mirror the editor,
+  // except the writing goals, which only the project page has.
+  const [section, setSection] = useState<EditorView | 'goals'>('script');
   // The open document, not storage: the editor writes there, and episodes
   // added here have to be visible to it the moment it mounts.
   const doc = useDocument(projectId);
@@ -154,6 +157,16 @@ export default function ProjectPage() {
   const onMeasured = useCallback((scriptId: string, starts: number[]) => {
     setPageStarts((all) => ({ ...all, [scriptId]: starts }));
   }, []);
+  // A length goal in pages needs every script laid out, as the reports do.
+  const goals = useGoals();
+  const measureForGoals = goals.projects[projectId]?.length?.unit === 'pages';
+  // A one-page script never reports (its breaks never move from [0]), the
+  // same default the reports rely on.
+  const pageCount = project?.scripts.reduce(
+    (sum, s) => sum + (pageStarts[s.id] ?? [0]).length,
+    0
+  );
+
   const parts = useMemo<ReportPart[]>(
     () =>
       (project?.scripts ?? []).map((s) => ({
@@ -209,11 +222,12 @@ export default function ProjectPage() {
     timeStyle: 'short',
   });
 
-  const sections: [EditorView, string][] = [
+  const sections: [EditorView | 'goals', string][] = [
     ['script', isShow ? t.episodesTab : t.script],
     ['title', t.titlePage],
     ['bible', t.bibleTab],
     ['reports', t.reportsTab],
+    ['goals', t.goalsTab],
   ];
 
   return (
@@ -301,6 +315,15 @@ export default function ProjectPage() {
           <>
             <MeasuredPages scripts={project.scripts} onMeasured={onMeasured} />
             <ReportsView parts={parts} series={isShow} bible={project.bible} onJump={jump} />
+          </>
+        )}
+
+        {section === 'goals' && (
+          <>
+            {measureForGoals && (
+              <MeasuredPages scripts={project.scripts} onMeasured={onMeasured} />
+            )}
+            <GoalsView project={project} pageCount={pageCount} />
           </>
         )}
       </div>

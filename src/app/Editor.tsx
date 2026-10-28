@@ -34,6 +34,10 @@ import ReportsView from '@/components/editor/ReportsView';
 import OutlineView from '@/components/editor/OutlineView';
 import { createHistory, pushHistory, undo, redo, type HistoryStack } from '@/services/history';
 import { reorderScenes } from '@/services/sceneBlocks';
+import { PAGE_CONTENT_PX } from '@/services/pagination';
+import { snapshot, writingEffort, type Period } from '@/services/writingGoals';
+import { GENERAL, recordWriting } from '@/services/storage/goals';
+import GoalProgress from '@/components/editor/GoalProgress';
 import { useIsActiveTab, useTabs } from '@/contexts/tabs';
 import { useRegisterEditorCommands, type EditorView } from '@/contexts/commands';
 
@@ -81,19 +85,30 @@ export default function Editor() {
   // Every copy of the project this editor has loaded or published. Anything
   // else showing up in the store was changed from outside and gets adopted.
   const ownCopies = useRef(new WeakSet<Project>());
+  // The script as it stood when writing was last counted towards the goals —
+  // see recordGoals().
+  const baseline = useRef<Map<string, string> | null>(null);
+  const takeBaseline = useCallback(
+    (p: Project | null) => {
+      const elements = p?.scripts.find((s) => s.id === scriptId)?.elements;
+      baseline.current = elements ? snapshot(elements) : null;
+    },
+    [scriptId]
+  );
 
   useEffect(() => {
     let cancelled = false;
     openDocument(projectId).then((p) => {
       if (cancelled) return;
       if (p) ownCopies.current.add(p);
+      takeBaseline(p);
       setProject(p);
       setLoading(false);
     });
     return () => {
       cancelled = true;
     };
-  }, [projectId]);
+  }, [projectId, takeBaseline]);
 
   const focusSeq = useRef(0);
   const saveTimer = useRef<number | undefined>(undefined);
@@ -126,8 +141,62 @@ export default function Editor() {
   useEffect(() => {
     if (!doc || ownCopies.current.has(doc.project)) return;
     ownCopies.current.add(doc.project);
+    // An import or a recovery is not writing: start counting afresh.
+    takeBaseline(doc.project);
     setProject(doc.project);
-  }, [doc]);
+  }, [doc, takeBaseline]);
+
+  const [goalReached, setGoalReached] = useState<{ scope: string; period: Period } | null>(
+    null
+  );
+
+  /** Counts what was written since the last count towards the writing goals.
+   * Called when typing pauses and when leaving, never per keystroke: a word
+   * half typed would otherwise count as written, then as removed. */
+  const recordGoals = useCallback(() => {
+    const elements = projectRef.current?.scripts.find((s) => s.id === scriptId)?.elements;
+    if (!elements || !baseline.current) return;
+    const effort = writingEffort(baseline.current, elements);
+    baseline.current = snapshot(elements);
+    // Pages only once every element has been laid out at least once.
+    let height = 0;
+    for (const el of elements) {
+      const h = heightsRef.current.get(el.id);
+      if (h === undefined) {
+        height = -1;
+        break;
+      }
+      height += h;
+    }
+    const reached = recordWriting(
+      projectId,
+      scriptId,
+      effort,
+      height < 0 ? null : height / PAGE_CONTENT_PX
+    );
+    // Several at once (the day's goal finishing the week's): the longest
+    // period is the one worth saying.
+    const rank = { day: 0, week: 1, month: 2 };
+    const best = [...reached].sort(
+      (a, b) =>
+        rank[b.period] - rank[a.period] ||
+        Number(b.scope === GENERAL) - Number(a.scope === GENERAL)
+    )[0];
+    if (best) setGoalReached(best);
+  }, [projectId, scriptId]);
+
+  // The day's starting length, once the pages have been laid out.
+  useEffect(() => {
+    if (loading) return;
+    const timer = window.setTimeout(recordGoals, 2500);
+    return () => window.clearTimeout(timer);
+  }, [loading, recordGoals]);
+
+  useEffect(() => {
+    if (!goalReached) return;
+    const timer = window.setTimeout(() => setGoalReached(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [goalReached]);
 
   /** The debounced write. On the desktop this is the recovery copy only: the
    * .berly file is the writer's to save, so it stays untouched until Ctrl+S.
@@ -136,8 +205,9 @@ export default function Editor() {
     window.clearTimeout(saveTimer.current);
     publish();
     writeDraft(projectId);
+    recordGoals();
     setSaveState('saved');
-  }, [projectId, publish]);
+  }, [projectId, publish, recordGoals]);
 
   const handleSave = useCallback(() => {
     window.clearTimeout(saveTimer.current);
@@ -193,10 +263,11 @@ export default function Editor() {
     window.clearTimeout(saveTimer.current);
     saveTimer.current = window.setTimeout(() => {
       writeDraft(projectId);
+      recordGoals();
       setSaveState('saved');
     }, AUTOSAVE_DELAY);
     return () => window.clearTimeout(saveTimer.current);
-  }, [project, projectId, publish]);
+  }, [project, projectId, publish, recordGoals]);
 
   // Ctrl+S, Ctrl+Z, Ctrl+Shift+Z and Ctrl+F now arrive through the command
   // registry (src/contexts/commands.tsx) — what's left here are the two keys that
@@ -790,6 +861,7 @@ export default function Editor() {
           pageStarts={pageStarts}
           onJump={handleJump}
           onReorderScenes={handleReorderScenes}
+          footer={<GoalProgress projectId={projectId} />}
         />
 
         <main
@@ -894,6 +966,14 @@ export default function Editor() {
           </aside>
         )}
       </div>
+
+      {goalReached && (
+        <div className="goal-toast" role="status" onClick={() => setGoalReached(null)}>
+          {t.goalReached[goalReached.period]} (
+          {goalReached.scope === GENERAL ? t.goalAllProjects : t.goalThisProject}
+          ). {t.wellDone}
+        </div>
+      )}
     </div>
   );
 }

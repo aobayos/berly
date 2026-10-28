@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import {
   DndContext,
   PointerSensor,
@@ -24,6 +24,8 @@ interface Props {
   pageStarts: number[];
   onJump: (elementId: string) => void;
   onReorderScenes: (fromIndex: number, toIndex: number) => void;
+  /** Pinned under the lists — today's writing goals. */
+  footer?: ReactNode;
 }
 
 function SortableSceneItem({
@@ -66,6 +68,7 @@ export default function Sidebar({
   pageStarts,
   onJump,
   onReorderScenes,
+  footer,
 }: Props) {
   const { t } = useI18n();
   const [tab, setTab] = useState<'scenes' | 'pages' | 'notes'>('scenes');
@@ -185,6 +188,8 @@ export default function Sidebar({
             ))}
           </ol>
         ))}
+
+      {footer && <div className="sidebar-footer">{footer}</div>}
     </nav>
   );
 }
