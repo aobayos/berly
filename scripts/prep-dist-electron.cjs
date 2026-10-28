@@ -5,7 +5,4 @@
 const fs = require('fs');
 
 fs.mkdirSync('dist-electron', { recursive: true });
-fs.writeFileSync(
-  'dist-electron/package.json',
-  JSON.stringify({ type: 'commonjs' })
-);
+fs.writeFileSync('dist-electron/package.json', JSON.stringify({ type: 'commonjs' }));

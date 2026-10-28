@@ -5,99 +5,83 @@ import type { BibleKind, Project, SheetSection, TitlePage } from '@/model/types'
 import { builtInTemplates, toTemplate } from '@/services/characterSheet';
 
 function touched(project: Project, change: Partial<Project>): Project {
-  return { ...project, ...change, updatedAt: Date.now() };
+	return { ...project, ...change, updatedAt: Date.now() };
 }
 
 /** Changes one entry, creating it first when the writer is filling in a name
  * that so far only exists in the script. */
 function withEntry(
-  project: Project,
-  name: string,
-  kind: BibleKind,
-  change: { note?: string; sheet?: SheetSection[] }
+	project: Project,
+	name: string,
+	kind: BibleKind,
+	change: { note?: string; sheet?: SheetSection[] },
 ): Project {
-  const exists = project.bible.some((b) => b.name === name && b.kind === kind);
-  const bible = exists
-    ? project.bible.map((b) => (b.name === name && b.kind === kind ? { ...b, ...change } : b))
-    : [...project.bible, { name, kind, note: '', ...change }];
-  return touched(project, { bible });
+	const exists = project.bible.some((b) => b.name === name && b.kind === kind);
+	const bible = exists
+		? project.bible.map((b) => (b.name === name && b.kind === kind ? { ...b, ...change } : b))
+		: [...project.bible, { name, kind, note: '', ...change }];
+	return touched(project, { bible });
 }
 
-export function setBibleNote(
-  project: Project,
-  name: string,
-  kind: BibleKind,
-  note: string
-): Project {
-  return withEntry(project, name, kind, { note });
+export function setBibleNote(project: Project, name: string, kind: BibleKind, note: string): Project {
+	return withEntry(project, name, kind, { note });
 }
 
-export function setBibleSheet(
-  project: Project,
-  name: string,
-  kind: BibleKind,
-  sheet: SheetSection[]
-): Project {
-  return withEntry(project, name, kind, { sheet });
+export function setBibleSheet(project: Project, name: string, kind: BibleKind, sheet: SheetSection[]): Project {
+	return withEntry(project, name, kind, { sheet });
 }
 
 /** Names are stored upper case, as cues and headings are. A name already in
  * the Bible is left alone. */
 export function addBibleEntry(project: Project, name: string, kind: BibleKind): Project {
-  const normalized = name.trim().toUpperCase();
-  if (!normalized) return project;
-  if (project.bible.some((b) => b.name === normalized && b.kind === kind)) return project;
-  return touched(project, { bible: [...project.bible, { name: normalized, kind, note: '' }] });
+	const normalized = name.trim().toUpperCase();
+	if (!normalized) return project;
+	if (project.bible.some((b) => b.name === normalized && b.kind === kind)) return project;
+	return touched(project, { bible: [...project.bible, { name: normalized, kind, note: '' }] });
 }
 
 export function removeBibleEntry(project: Project, name: string, kind: BibleKind): Project {
-  return touched(project, {
-    bible: project.bible.filter((b) => !(b.name === name && b.kind === kind)),
-  });
+	return touched(project, {
+		bible: project.bible.filter((b) => !(b.name === name && b.kind === kind)),
+	});
 }
 
 /** Promotes a sheet's layout — its sections and labels, without the answers —
  * to the shape new sheets of that kind start from. */
-export function saveSheetTemplate(
-  project: Project,
-  kind: BibleKind,
-  sheet: SheetSection[]
-): Project {
-  const current = project.sheetTemplates ?? builtInTemplates();
-  return touched(project, { sheetTemplates: { ...current, [kind]: toTemplate(sheet) } });
+export function saveSheetTemplate(project: Project, kind: BibleKind, sheet: SheetSection[]): Project {
+	const current = project.sheetTemplates ?? builtInTemplates();
+	return touched(project, { sheetTemplates: { ...current, [kind]: toTemplate(sheet) } });
 }
 
 export function setTitlePage(project: Project, titlePage: TitlePage): Project {
-  return touched(project, { titlePage });
+	return touched(project, { titlePage });
 }
 
 /** Gives a character another name. A blank Bible entry under that name is
  * folded in (removed); the caller checks aliasConflict() first, so a filled-in
  * one never reaches here. */
 export function addAlias(project: Project, owner: string, alias: string): Project {
-  const normalized = alias.trim().toUpperCase();
-  if (!normalized || normalized === owner) return project;
-  const entry = project.bible.find((b) => b.kind === 'character' && b.name === owner);
-  if (entry?.aliases?.includes(normalized)) return project;
-  const bible = project.bible.filter((b) => !(b.kind === 'character' && b.name === normalized));
-  const withOwner = bible.some((b) => b.kind === 'character' && b.name === owner)
-    ? bible
-    : [...bible, { name: owner, kind: 'character' as const, note: '' }];
-  return touched(project, {
-    bible: withOwner.map((b) =>
-      b.kind === 'character' && b.name === owner
-        ? { ...b, aliases: [...(b.aliases ?? []), normalized] }
-        : b
-    ),
-  });
+	const normalized = alias.trim().toUpperCase();
+	if (!normalized || normalized === owner) return project;
+	const entry = project.bible.find((b) => b.kind === 'character' && b.name === owner);
+	if (entry?.aliases?.includes(normalized)) return project;
+	const bible = project.bible.filter((b) => !(b.kind === 'character' && b.name === normalized));
+	const withOwner = bible.some((b) => b.kind === 'character' && b.name === owner)
+		? bible
+		: [...bible, { name: owner, kind: 'character' as const, note: '' }];
+	return touched(project, {
+		bible: withOwner.map((b) =>
+			b.kind === 'character' && b.name === owner ? { ...b, aliases: [...(b.aliases ?? []), normalized] } : b,
+		),
+	});
 }
 
 export function removeAlias(project: Project, owner: string, alias: string): Project {
-  return touched(project, {
-    bible: project.bible.map((b) =>
-      b.kind === 'character' && b.name === owner
-        ? { ...b, aliases: (b.aliases ?? []).filter((a) => a !== alias) }
-        : b
-    ),
-  });
+	return touched(project, {
+		bible: project.bible.map((b) =>
+			b.kind === 'character' && b.name === owner
+				? { ...b, aliases: (b.aliases ?? []).filter((a) => a !== alias) }
+				: b,
+		),
+	});
 }
