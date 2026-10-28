@@ -13,6 +13,7 @@ import { useContextMenu } from '@/contexts/contextMenu';
 import { isFileBased } from '@/services/storage/documents';
 import { useShellActions } from '@/contexts/commands';
 import { useI18n } from '@/i18n';
+import GoalsView from '@/app/GoalsView';
 
 interface Props {
   /** Opens the project in a tab. The welcome screen is the only place this
@@ -155,6 +156,9 @@ export default function ProjectList({ onOpenProject, onImportClick }: Props) {
           </button>
         </form>
       )}
+
+      {/* The general goal: writing in any project counts towards it. */}
+      <GoalsView />
 
       {projects.length === 0 && !creating ? (
         <p className="home-empty">{t.noProjects}</p>
