@@ -65,6 +65,21 @@ export const TRANSITIONS: Record<Lang, string[]> = {
   ],
 };
 
+/** A character cue as a name: upper case, without an extension like (V.O.)
+ * or (O.S.), so the same character is never counted twice. */
+export function characterName(cue: string): string {
+  return cue
+    .trim()
+    .toUpperCase()
+    .replace(/\s*\(.*\)\s*$/, '');
+}
+
+/** The place in a scene heading ("INT. KITCHEN - DAY" → "KITCHEN"). */
+export function sceneLocation(heading: string): string {
+  const rest = heading.trim().toUpperCase().replace(PREFIX_RE, '');
+  return rest.split(' - ')[0].trim();
+}
+
 /** Unique character names used anywhere in the project, without
  * extensions like (V.O.) / (O.S.). */
 export function extractCharacters(scripts: Script[]): string[] {
@@ -72,10 +87,7 @@ export function extractCharacters(scripts: Script[]): string[] {
   for (const script of scripts) {
     for (const el of script.elements) {
       if (el.type !== 'character') continue;
-      const name = el.text
-        .trim()
-        .toUpperCase()
-        .replace(/\s*\(.*\)\s*$/, '');
+      const name = characterName(el.text);
       if (name) names.add(name);
     }
   }
@@ -88,8 +100,7 @@ export function extractPlaces(scripts: Script[]): string[] {
   for (const script of scripts) {
     for (const el of script.elements) {
       if (el.type !== 'scene') continue;
-      const rest = el.text.trim().toUpperCase().replace(PREFIX_RE, '');
-      const place = rest.split(' - ')[0].trim();
+      const place = sceneLocation(el.text);
       if (place) places.add(place);
     }
   }

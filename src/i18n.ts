@@ -84,6 +84,20 @@ const en = {
   lines: 'lines',
   biblePlaceholder: 'Notes about this character or location…',
 
+  // Reports
+  reportsTab: 'Reports',
+  reportOverview: 'Overview',
+  reportEmpty: 'Nothing to report yet — write a few lines first.',
+  reportWords: 'Words',
+  reportBalance: 'Dialogue and action',
+  reportOther: 'Other',
+  reportElements: 'Elements',
+  reportName: 'Name',
+  reportSpeeches: 'Speeches',
+  reportShare: 'Share of dialogue',
+  reportHeading: 'Scene heading',
+  reportLocation: 'Location',
+
   // Title page fields
   tpTitle: 'Title',
   tpCredit: 'Credit (e.g. Written by)',
@@ -337,6 +351,19 @@ const fr: Dict = {
   line: 'ligne',
   lines: 'lignes',
   biblePlaceholder: 'Notes sur ce personnage ou ce lieu…',
+
+  reportsTab: 'Rapports',
+  reportOverview: 'Vue d’ensemble',
+  reportEmpty: 'Rien à analyser pour l’instant — écrivez d’abord quelques lignes.',
+  reportWords: 'Mots',
+  reportBalance: 'Dialogue et action',
+  reportOther: 'Autre',
+  reportElements: 'Éléments',
+  reportName: 'Nom',
+  reportSpeeches: 'Répliques',
+  reportShare: 'Part du dialogue',
+  reportHeading: 'En-tête de scène',
+  reportLocation: 'Lieu',
 
   tpTitle: 'Titre',
   tpCredit: 'Mention (ex. Écrit par)',
