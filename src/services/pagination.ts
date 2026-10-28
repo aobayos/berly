@@ -99,3 +99,19 @@ function snippetFrom(elements: ScriptElement[], start: number): string {
   }
   return '';
 }
+
+/** A scene's length the way the trade counts it: in eighths of a page,
+ * rounded up, never less than one — a one-line scene still costs a slot on
+ * the schedule. `height` is in the same measured pixels as the pages. */
+export function eighths(height: number, pageHeight = PAGE_CONTENT_PX): number {
+  return Math.max(1, Math.ceil((height / pageHeight) * 8 - 0.05));
+}
+
+/** 11 → "1 3/8", 4 → "4/8", 16 → "2". Eighths are never reduced to
+ * quarters or halves: a production board reads "4/8", not "1/2". */
+export function formatEighths(count: number): string {
+  const pages = Math.floor(count / 8);
+  const rest = count % 8;
+  if (!rest) return String(pages);
+  return pages ? `${pages} ${rest}/8` : `${rest}/8`;
+}

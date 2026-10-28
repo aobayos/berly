@@ -18,7 +18,7 @@ import type { RecentProject } from '@/desktop/types';
 import { closeWindow, isDesktop } from '@/desktop/bridge';
 import { isFileBased } from '@/services/storage/documents';
 
-export type EditorView = 'script' | 'title' | 'bible' | 'reports';
+export type EditorView = 'script' | 'outline' | 'title' | 'bible' | 'reports';
 
 /** What the *active* project tab can currently do. Published by Editor.tsx,
  * and by ProjectPage.tsx with the subset that makes sense without a script
@@ -38,6 +38,9 @@ export interface EditorCommands {
    * a drawer beside it; the project page has a section for each. */
   show(view: EditorView): void;
   showing(view: EditorView): boolean;
+  /** Which views this screen has; every one of them when absent. The
+   * outline is one script's, so the project page has none. */
+  offers?(view: EditorView): boolean;
   canUndo: boolean;
   canRedo: boolean;
 }
@@ -250,6 +253,14 @@ export function useCommands(ctx: CommandContext): Command[] {
         run: () => editor?.show('script'),
       },
       {
+        id: 'view.outline',
+        label: t.outlineTab,
+        accelerator: 'Mod+Alt+O',
+        group: 'view',
+        enabled: Boolean(editor) && (editor?.offers?.('outline') ?? true),
+        run: () => editor?.show('outline'),
+      },
+      {
         id: 'view.title',
         label: t.titlePage,
         accelerator: 'Mod+Alt+T',
@@ -399,6 +410,7 @@ export function useMenus(commands: Command[], ctx: CommandContext): MenuSpec[] {
         mnemonic: 'v',
         entries: () => [
           item('view.script', { checked: editor?.showing('script') }),
+          item('view.outline', { checked: editor?.showing('outline') }),
           item('view.title', { checked: editor?.showing('title') }),
           item('view.bible', { checked: editor?.showing('bible') }),
           item('view.reports', { checked: editor?.showing('reports') }),

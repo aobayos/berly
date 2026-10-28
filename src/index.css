@@ -330,7 +330,7 @@ a:focus-visible,
   border: none;
   color: var(--text-dim);
   border-radius: 5px;
-  padding: 5px 9px;
+  padding: 5px 7px;
   font-size: 12.5px;
 }
 
@@ -350,7 +350,7 @@ a:focus-visible,
   cursor: default;
 }
 
-/* Script / title page / Bible / reports: the type bar's shape, so the two
+/* Script / outline / title page / Bible / reports: the type bar's shape, so the two
    segmented controls read as a pair, with the selected view outlined in the
    accent rather than filled — a filled pill already means the element type. */
 .view-switch {
@@ -367,7 +367,7 @@ a:focus-visible,
   border: 1px solid transparent;
   color: var(--text-dim);
   border-radius: 5px;
-  padding: 4px 10px;
+  padding: 4px 7px;
   font-size: 13px;
   white-space: nowrap;
 }
@@ -1656,6 +1656,125 @@ a:focus-visible,
   overflow: hidden;
 }
 
+/* ---------- Outline (src/components/editor/OutlineView.tsx) ---------- */
+
+.outline {
+  padding: 24px 32px 48px;
+}
+
+.outline-summary {
+  color: var(--text-dim);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.outline-empty {
+  padding: 32px;
+}
+
+.outline-grid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+/* An index card: paper, not panel, so it reads as the script's own. */
+.outline-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 210px;
+  padding: 10px 14px 12px;
+  background: var(--page-bg);
+  color: var(--page-text);
+  border-top: 3px solid var(--accent);
+  border-radius: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.outline-card.is-dragging {
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  opacity: 0.92;
+}
+
+.outline-card-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.outline-handle {
+  display: flex;
+  padding: 2px;
+  margin-left: -4px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: rgba(0, 0, 0, 0.4);
+  cursor: grab;
+  touch-action: none;
+}
+
+.outline-handle:hover {
+  color: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.outline-number {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.outline-length {
+  margin-left: auto;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.outline-heading {
+  border: none;
+  background: none;
+  padding: 0;
+  text-align: left;
+  color: inherit;
+  font-family: var(--font-screenplay);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.outline-heading:hover {
+  text-decoration: underline;
+}
+
+.outline-speakers {
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 12px;
+}
+
+.outline-synopsis {
+  flex: 1;
+  width: 100%;
+  min-height: 80px;
+  resize: vertical;
+  padding: 6px 0 0;
+  border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+  outline: none;
+}
+
+.outline-synopsis::placeholder {
+  color: rgba(0, 0, 0, 0.35);
+}
+
 /* ---------- Print / PDF export ---------- */
 
 .print-only {
@@ -1673,6 +1792,7 @@ a:focus-visible,
   .toolbar,
   .sidebar,
   .shortcuts-hint,
+  .outline,
   .el-menu,
   .note-anchor,
   .find-panel,

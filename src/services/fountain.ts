@@ -30,6 +30,14 @@ export function toFountain(project: Project, script: Script): string {
         const heading = text.toUpperCase();
         lines.push(SCENE_PREFIX.test(heading) ? heading : `.${heading}`);
         lines.push('');
+        // Fountain's own synopsis line, in a paragraph of its own under the
+        // heading. One line only: fountain-js reads a second "= " line as
+        // action, and so would other tools.
+        const synopsis = el.synopsis?.replace(/\s+/g, ' ').trim();
+        if (synopsis) {
+          lines.push(`= ${synopsis}`);
+          lines.push('');
+        }
         break;
       }
       case 'action':

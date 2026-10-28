@@ -49,7 +49,7 @@ const INLINE_NOTE = /\[\[([\s\S]*?)]]/g;
  * without the forcing marks (. @ > ~ !), the centring "<", case or spacing. */
 function lineKey(line: string): string {
   return line
-    .replace(/^[\s.@>~!]+/, '')
+    .replace(/^[\s.@>~!=]+/, '')
     .replace(/[\s<]+$/, '')
     .replace(/\s+/g, ' ')
     .toUpperCase();
@@ -97,6 +97,19 @@ export function parseFountain(source: string): ImportedScreenplay {
   // Lifted notes come back in order: each waits for the next element made
   // from the line it was on.
   let pending = 0;
+  /** Gives `element` the notes written on the lines it was made from. */
+  const claimNotes = (element: ScriptElement, body: string) => {
+    // A note spanning several lines wasn't lifted (it isn't on one line), so
+    // fountain-js left it in the text.
+    for (const [, note] of body.matchAll(INLINE_NOTE)) {
+      if (note.trim()) addNote(element, note.trim());
+    }
+    for (const line of body.split('\n')) {
+      while (pending < notes.length && notes[pending].key === lineKey(line)) {
+        addNote(element, notes[pending++].note);
+      }
+    }
+  };
 
   for (const token of parsed.tokens) {
     const body = token.text?.trim();
@@ -117,6 +130,22 @@ export function parseFountain(source: string): ImportedScreenplay {
 
     if (STRUCTURAL.has(token.type)) continue;
 
+    // A synopsis belongs to the scene heading right above it; anywhere else
+    // (under a section, say) there is no scene to give it to.
+    if (token.type === 'synopsis') {
+      const previous = elements[elements.length - 1];
+      if (previous?.type === 'scene' && body) {
+        const synopsis = body.replace(INLINE_NOTE, '').trim();
+        if (synopsis) {
+          previous.synopsis = previous.synopsis ? `${previous.synopsis}\n${synopsis}` : synopsis;
+        }
+        claimNotes(previous, body);
+      } else if (body) {
+        dropped.synopsis = (dropped.synopsis ?? 0) + 1;
+      }
+      continue;
+    }
+
     if (token.type === 'note') {
       const previous = elements[elements.length - 1];
       if (previous && body) addNote(previous, body);
@@ -126,23 +155,14 @@ export function parseFountain(source: string): ImportedScreenplay {
 
     const type = BODY_TYPES[token.type];
     if (!type) {
-      // Sections, synopses, notes, page breaks: real Fountain, no home here.
+      // Sections and page breaks: real Fountain, no home here.
       dropped[token.type] = (dropped[token.type] ?? 0) + 1;
       continue;
     }
 
     if (!body) continue;
     const element = newElement(type, body.replace(INLINE_NOTE, '').trim());
-    // A note spanning several lines wasn't lifted (it isn't on one line), so
-    // fountain-js left it in the text.
-    for (const [, note] of body.matchAll(INLINE_NOTE)) {
-      if (note.trim()) addNote(element, note.trim());
-    }
-    for (const line of body.split('\n')) {
-      while (pending < notes.length && notes[pending].key === lineKey(line)) {
-        addNote(element, notes[pending++].note);
-      }
-    }
+    claimNotes(element, body);
     elements.push(element);
   }
 

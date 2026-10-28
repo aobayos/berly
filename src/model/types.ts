@@ -19,6 +19,9 @@ export interface ScriptElement {
    * part of the page: it takes no room, and neither the PDF nor print
    * carries it. Absent when there is none, never an empty string. */
   note?: string;
+  /** Scene headings only: what happens in the scene, written on its card in
+   * the outline. Not part of the page either. Absent when there is none. */
+  synopsis?: string;
 }
 
 /** One screenplay document: the whole film for a movie, one episode for a show. */

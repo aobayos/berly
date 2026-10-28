@@ -37,7 +37,7 @@ export function parseFdx(xml: string): ImportedScreenplay {
     // A ScriptNote sits inside the paragraph it annotates, with paragraphs
     // and <Text> of its own: those are the note, not the script.
     const text = [...paragraph.querySelectorAll('Text')]
-      .filter((node) => !node.closest('ScriptNote'))
+      .filter((node) => !node.closest('ScriptNote, SceneProperties'))
       .map((node) => node.textContent ?? '')
       .join('')
       .trim();
@@ -68,6 +68,19 @@ export function parseFdx(xml: string): ImportedScreenplay {
     }
     const element = newElement(type, text);
     if (note) element.note = note;
+    // A scene heading's <SceneProperties> holds the scene's summary — what
+    // the outline calls its synopsis.
+    if (type === 'scene') {
+      const synopsis = [
+        ...paragraph.querySelectorAll(':scope > SceneProperties > Summary Paragraph'),
+      ]
+        .map((p) =>
+          [...p.querySelectorAll('Text')].map((node) => node.textContent ?? '').join('')
+        )
+        .join('\n')
+        .trim();
+      if (synopsis) element.synopsis = synopsis;
+    }
     elements.push(element);
   }
 
