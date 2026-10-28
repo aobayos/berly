@@ -1585,7 +1585,9 @@ a:focus-visible,
   .sidebar,
   .shortcuts-hint,
   .el-menu,
-  .find-panel {
+  .find-panel,
+  .editor-drawer,
+  .measure-offscreen {
     display: none !important;
   }
 
@@ -2249,4 +2251,138 @@ a:focus-visible,
 .report-names {
   color: var(--text-dim);
   font-size: 12.5px;
+}
+
+/* ---------- Project page ---------- */
+
+.project-page {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.project-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 24px 0;
+}
+
+.project-page-header .home-title {
+  margin-top: 0;
+}
+
+.project-page-body {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px 24px 48px;
+}
+
+.project-page-actions {
+  justify-content: flex-end;
+  margin-bottom: 20px;
+}
+
+/* The title page keeps its paper look and its real size here too. */
+.project-section-title .title-page {
+  margin: 0 auto;
+}
+
+/* Scripts laid out only to be measured: the real page width and the real
+   stylesheet, out of sight. Not display:none, which measures as nothing. */
+.measure-offscreen {
+  position: absolute;
+  left: -100000px;
+  top: 0;
+  width: 9in;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ---------- Editor drawer (Bible / reports for this episode) ---------- */
+
+.editor-drawer {
+  width: 460px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+  background: var(--bg-panel);
+  min-height: 0;
+}
+
+.editor-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 13.5px;
+}
+
+.editor-drawer-body {
+  flex: 1;
+  overflow: auto;
+  padding: 14px;
+}
+
+/* A page narrower than Letter would wrap differently and break somewhere
+   else; with the drawer open the script scrolls sideways instead. */
+.editor-body.has-drawer .page {
+  max-width: none;
+  flex-shrink: 0;
+}
+
+/* Sidebar + page + drawer need about 1560px. Below that the page matters
+   more than the scene list, which is one click away once the drawer closes. */
+@media (max-width: 1560px) {
+  .editor-body.has-drawer .sidebar {
+    display: none;
+  }
+}
+
+.bible-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 0;
+  max-width: none;
+}
+
+.bible-compact .bible-index {
+  position: static;
+}
+
+.bible-back {
+  align-self: flex-start;
+}
+
+.reports-compact {
+  padding: 0;
+}
+
+.reports-compact .reports-tab {
+  padding: 8px 9px;
+}
+
+.reports-compact .report-table {
+  font-size: 12.5px;
+}
+
+.reports-compact .report-table th,
+.reports-compact .report-table td {
+  padding: 6px 6px;
+}
+
+.reports-compact .report-share-bar,
+.reports-compact .col-optional {
+  display: none;
+}
+
+.reports-compact .report-tiles {
+  grid-template-columns: repeat(2, 1fr);
 }

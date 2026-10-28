@@ -5,6 +5,9 @@
 // renamed, reordered, added and deleted here — and any sheet's layout can be
 // promoted to the template new sheets start from, which is what makes this
 // usable for a series bible rather than a one-off form.
+//
+// On the project page it covers the whole project; in an episode's drawer it
+// is scoped to that episode: who and where appear in it, counted there.
 import { useMemo, useState } from 'react';
 import type {
   BibleEntry,
@@ -24,16 +27,24 @@ import {
   fieldLabel,
   sectionTitle,
 } from '@/services/characterSheet';
+import {
+  addBibleEntry,
+  removeBibleEntry,
+  saveSheetTemplate,
+  setBibleNote,
+  setBibleSheet,
+} from '@/services/bibleEdit';
 import { useI18n } from '@/i18n';
 
 interface Props {
   project: Project;
-  script: Script;
-  onNoteChange: (name: string, kind: BibleKind, note: string) => void;
-  onSheetChange: (name: string, kind: BibleKind, sheet: SheetSection[]) => void;
-  onSaveTemplate: (kind: BibleKind, sheet: SheetSection[]) => void;
-  onAdd: (name: string, kind: BibleKind) => void;
-  onRemove: (name: string, kind: BibleKind) => void;
+  /** The episode a drawer is scoped to; absent on the project page. */
+  scope?: Script;
+  /** One column (the index, or one sheet with a way back) for a drawer. */
+  compact?: boolean;
+  /** Applies one of the bibleEdit changes; the caller decides how it is
+   * recorded and saved. */
+  onEdit: (fn: (project: Project) => Project) => void;
   onJump: (elementId: string) => void;
 }
 
@@ -52,12 +63,9 @@ interface Selection {
 
 export default function BibleView({
   project,
-  script,
-  onNoteChange,
-  onSheetChange,
-  onSaveTemplate,
-  onAdd,
-  onRemove,
+  scope,
+  compact = false,
+  onEdit,
   onJump,
 }: Props) {
   const { t } = useI18n();
@@ -68,16 +76,28 @@ export default function BibleView({
   const entry = (name: string, kind: BibleKind): BibleEntry | undefined =>
     project.bible.find((b) => b.name === name && b.kind === kind);
 
+  // Scoped to an episode, the index lists who and where appear in it, plus
+  // whatever is selected, so an entry just added there doesn't vanish.
+  const scripts = useMemo(() => (scope ? [scope] : project.scripts), [scope, project]);
+  const selectedName = (kind: BibleKind) =>
+    scope && selected?.kind === kind ? [selected.name] : [];
+
   const characterRows = useMemo<Row[]>(() => {
     const names = new Set<string>([
-      ...extractCharacters(project.scripts),
-      ...project.bible.filter((b) => b.kind === 'character').map((b) => b.name),
+      ...extractCharacters(scripts),
+      ...(scope ? [] : project.bible.filter((b) => b.kind === 'character').map((b) => b.name)),
+      ...selectedName('character'),
     ]);
-    const totals = aggregateCharacterStats(project.scripts);
-    const currentStats = characterStats(script.elements);
+    const totals = aggregateCharacterStats(scripts);
+    // Where each name first appears, in script order: the jump target.
+    const firstIds = new Map<string, string>();
+    for (const s of scripts) {
+      for (const stat of characterStats(s.elements)) {
+        if (!firstIds.has(stat.name)) firstIds.set(stat.name, stat.firstElementId);
+      }
+    }
     return [...names].sort().map((name) => {
       const total = totals.get(name);
-      const current = currentStats.find((c) => c.name === name);
       const meta =
         total && total.sceneCount > 0
           ? `${total.sceneCount} ${total.sceneCount === 1 ? t.scene : t.scenes} · ${total.dialogueCount} ${total.dialogueCount === 1 ? t.line : t.lines}`
@@ -89,26 +109,30 @@ export default function BibleView({
         started: !isSheetEmpty(
           project.bible.find((b) => b.name === name && b.kind === 'character')?.sheet
         ),
-        firstElementId: current?.firstElementId,
+        firstElementId: firstIds.get(name),
       };
     });
-  }, [project, script, t]);
+    // selectedName reads `selected`, which is in the list.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project, scripts, scope, selected, t]);
 
   const locationRows = useMemo<Row[]>(() => {
     const names = new Set<string>([
-      ...extractPlaces(project.scripts),
-      ...project.bible.filter((b) => b.kind === 'location').map((b) => b.name),
+      ...extractPlaces(scripts),
+      ...(scope ? [] : project.bible.filter((b) => b.kind === 'location').map((b) => b.name)),
+      ...selectedName('location'),
     ]);
-    const usedInCurrentScript = new Set(extractPlaces([script]));
+    const used = new Set(extractPlaces(scripts));
     return [...names].sort().map((name) => ({
       name,
       kind: 'location' as const,
-      meta: usedInCurrentScript.has(name) ? '' : t.notUsedYet,
+      meta: used.has(name) ? '' : t.notUsedYet,
       started: !isSheetEmpty(
         project.bible.find((b) => b.name === name && b.kind === 'location')?.sheet
       ),
     }));
-  }, [project, script, t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project, scripts, scope, selected, t]);
 
   const selectedRow =
     selected &&
@@ -119,17 +143,45 @@ export default function BibleView({
   function handleAdd(name: string, kind: BibleKind) {
     const normalized = name.trim().toUpperCase();
     if (!normalized) return;
-    onAdd(normalized, kind);
+    onEdit((p) => addBibleEntry(p, normalized, kind));
     setSelected({ name: normalized, kind });
   }
 
   function handleRemove(name: string, kind: BibleKind) {
-    onRemove(name, kind);
+    onEdit((p) => removeBibleEntry(p, name, kind));
     if (selected?.name === name && selected.kind === kind) setSelected(null);
   }
 
+  const sheet =
+    selected && selectedRow ? (
+      <SheetEditor
+        key={`${selected.kind}:${selected.name}`}
+        project={project}
+        row={selectedRow}
+        entry={entry(selected.name, selected.kind)}
+        onEdit={onEdit}
+        onRemove={handleRemove}
+        onJump={onJump}
+      />
+    ) : null;
+
+  if (compact && sheet) {
+    return (
+      <div className="bible-page bible-compact">
+        <button
+          type="button"
+          className="btn btn-small btn-ghost bible-back"
+          onClick={() => setSelected(null)}
+        >
+          ← {t.bibleTab}
+        </button>
+        {sheet}
+      </div>
+    );
+  }
+
   return (
-    <div className="bible-page bible-split">
+    <div className={`bible-page ${compact ? 'bible-compact' : 'bible-split'}`}>
       <aside className="bible-index">
         <IndexSection
           heading={t.bibleCharacters}
@@ -163,23 +215,12 @@ export default function BibleView({
         />
       </aside>
 
-      {selected && selectedRow ? (
-        <SheetEditor
-          key={`${selected.kind}:${selected.name}`}
-          project={project}
-          row={selectedRow}
-          entry={entry(selected.name, selected.kind)}
-          onNoteChange={onNoteChange}
-          onSheetChange={onSheetChange}
-          onSaveTemplate={onSaveTemplate}
-          onRemove={handleRemove}
-          onJump={onJump}
-        />
-      ) : (
-        <section className="bible-detail bible-detail-empty">
-          <p className="side-empty">{t.sheetEmpty}</p>
-        </section>
-      )}
+      {!compact &&
+        (sheet ?? (
+          <section className="bible-detail bible-detail-empty">
+            <p className="side-empty">{t.sheetEmpty}</p>
+          </section>
+        ))}
     </div>
   );
 }
@@ -270,18 +311,14 @@ function SheetEditor({
   project,
   row,
   entry,
-  onNoteChange,
-  onSheetChange,
-  onSaveTemplate,
+  onEdit,
   onRemove,
   onJump,
 }: {
   project: Project;
   row: Row;
   entry: BibleEntry | undefined;
-  onNoteChange: (name: string, kind: BibleKind, note: string) => void;
-  onSheetChange: (name: string, kind: BibleKind, sheet: SheetSection[]) => void;
-  onSaveTemplate: (kind: BibleKind, sheet: SheetSection[]) => void;
+  onEdit: (fn: (project: Project) => Project) => void;
   onRemove: (name: string, kind: BibleKind) => void;
   onJump: (elementId: string) => void;
 }) {
@@ -298,7 +335,8 @@ function SheetEditor({
     [entry?.sheet, row.kind, row.name]
   );
 
-  const update = (next: SheetSection[]) => onSheetChange(row.name, row.kind, next);
+  const update = (next: SheetSection[]) =>
+    onEdit((p) => setBibleSheet(p, row.name, row.kind, next));
 
   const updateSection = (index: number, fn: (s: SheetSection) => SheetSection) =>
     update(sections.map((s, i) => (i === index ? fn(s) : s)));
@@ -501,7 +539,10 @@ function SheetEditor({
             rows={4}
             placeholder={t.biblePlaceholder}
             value={entry?.note ?? ''}
-            onChange={(e) => onNoteChange(row.name, row.kind, e.target.value)}
+            onChange={(e) => {
+              const note = e.target.value;
+              onEdit((p) => setBibleNote(p, row.name, row.kind, note));
+            }}
           />
         </section>
       </div>
@@ -519,7 +560,7 @@ function SheetEditor({
           className="btn btn-small btn-ghost"
           title={t.sheetSaveTemplate}
           onClick={() => {
-            onSaveTemplate(row.kind, sections);
+            onEdit((p) => saveSheetTemplate(p, row.kind, sections));
             setTemplateSaved(true);
           }}
         >

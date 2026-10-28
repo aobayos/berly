@@ -210,3 +210,99 @@ export function pageRanges(pages: number[]): string {
   }
   return parts.join(', ');
 }
+
+export interface ReportPart {
+  scriptId: string;
+  name: string;
+  elements: ScriptElement[];
+  pageStarts: number[];
+}
+
+export interface EpisodeSummary {
+  /** 1-based, in the project's order. */
+  number: number;
+  scriptId: string;
+  name: string;
+  pages: number;
+  scenes: number;
+  words: number;
+}
+
+/** The same report over several scripts — a whole series — or over one. Each
+ * script is reported on its own and the results merged: counts add up,
+ * shares are recomputed against the series' dialogue, and each row says
+ * which episodes it appears in. Page numbers only mean something within one
+ * script, so merged rows keep them per scene and drop them elsewhere. */
+export interface ProjectReport extends Omit<ScriptReport, 'characters' | 'scenes' | 'locations'> {
+  episodes: EpisodeSummary[];
+  characters: (CharacterReport & { episodes: number[] })[];
+  scenes: (SceneReport & { episode: number })[];
+  locations: (LocationReport & { episodes: number[] })[];
+}
+
+export function projectReport(parts: ReportPart[]): ProjectReport {
+  const reports = parts.map((part) => scriptReport(part.elements, part.pageStarts));
+  const single = parts.length === 1;
+
+  const elementCounts = Object.fromEntries(ELEMENT_TYPES.map((type) => [type, 0])) as Record<
+    ElementType,
+    number
+  >;
+  const characters = new Map<string, CharacterReport & { episodes: number[] }>();
+  const locations = new Map<string, LocationReport & { episodes: number[] }>();
+  const scenes: (SceneReport & { episode: number })[] = [];
+  let dialogueWords = 0;
+
+  reports.forEach((report, i) => {
+    const episode = i + 1;
+    for (const type of ELEMENT_TYPES) elementCounts[type] += report.elementCounts[type];
+    dialogueWords += report.dialogueWords;
+    scenes.push(...report.scenes.map((scene) => ({ ...scene, episode })));
+
+    for (const c of report.characters) {
+      const merged = characters.get(c.name);
+      if (!merged) {
+        characters.set(c.name, { ...c, pages: single ? c.pages : [], episodes: [episode] });
+        continue;
+      }
+      merged.speeches += c.speeches;
+      merged.words += c.words;
+      merged.scenes += c.scenes;
+      merged.episodes.push(episode);
+    }
+
+    for (const l of report.locations) {
+      const merged = locations.get(l.name);
+      if (!merged) {
+        locations.set(l.name, { ...l, pages: single ? l.pages : [], episodes: [episode] });
+        continue;
+      }
+      merged.scenes += l.scenes;
+      merged.characters = [...new Set([...merged.characters, ...l.characters])].sort();
+      merged.episodes.push(episode);
+    }
+  });
+
+  return {
+    pages: reports.reduce((sum, r) => sum + r.pages, 0),
+    words: reports.reduce((sum, r) => sum + r.words, 0),
+    dialogueWords,
+    actionWords: reports.reduce((sum, r) => sum + r.actionWords, 0),
+    elementCounts,
+    episodes: parts.map((part, i) => ({
+      number: i + 1,
+      scriptId: part.scriptId,
+      name: part.name,
+      pages: reports[i].pages,
+      scenes: reports[i].scenes.length,
+      words: reports[i].words,
+    })),
+    characters: [...characters.values()]
+      .map((c) => ({ ...c, share: dialogueWords > 0 ? c.words / dialogueWords : 0 }))
+      .sort((a, b) => b.words - a.words || a.name.localeCompare(b.name)),
+    scenes,
+    locations: [...locations.values()].sort(
+      (a, b) => b.scenes - a.scenes || a.name.localeCompare(b.name)
+    ),
+  };
+}

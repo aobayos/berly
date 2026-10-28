@@ -5,17 +5,10 @@ import {
   useRef,
   useState,
 } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import type {
-  BibleKind,
-  ElementType,
-  Project,
-  Script,
-  SheetSection,
-  TitlePage,
-} from '@/model/types';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import type { BibleKind, ElementType, Project, Script } from '@/model/types';
 import { ELEMENT_TYPES, NEXT_ELEMENT_TYPE, newElement } from '@/model/types';
-import { builtInTemplates, toTemplate } from '@/services/characterSheet';
+import { setTitlePage } from '@/services/bibleEdit';
 import { downloadFile, exportPdf } from '@/services/storage';
 import {
   isFileBased,
@@ -54,7 +47,10 @@ export default function Editor() {
 
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<EditorView>('script');
+  // The main pane, and the drawer beside it (the Bible or the reports for
+  // this episode); see show().
+  const [view, setView] = useState<'script' | 'title'>('script');
+  const [drawer, setDrawer] = useState<'bible' | 'reports' | null>(null);
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<'saved' | 'saving'>('saved');
@@ -442,102 +438,13 @@ export default function Editor() {
     [script, requestFocus]
   );
 
-  const handleTitlePageChange = useCallback(
-    (titlePage: TitlePage) => {
+/** Any change to the project outside the script itself — the title page,
+   * the Bible. One undo step like a keystroke, and saved the same way. */
+  const editProject = useCallback(
+    (fn: (p: Project) => Project) => {
       if (projectRef.current) recordHistory(projectRef.current);
       dirty.current = true;
-      setProject((p) => (p ? { ...p, titlePage, updatedAt: Date.now() } : p));
-    },
-    [recordHistory]
-  );
-
-  const handleBibleNoteChange = useCallback(
-    (name: string, kind: BibleKind, note: string) => {
-      if (projectRef.current) recordHistory(projectRef.current);
-      dirty.current = true;
-      setProject((p) => {
-        if (!p) return p;
-        const exists = p.bible.some((b) => b.name === name && b.kind === kind);
-        const bible = exists
-          ? p.bible.map((b) => (b.name === name && b.kind === kind ? { ...b, note } : b))
-          : [...p.bible, { name, kind, note }];
-        return { ...p, bible, updatedAt: Date.now() };
-      });
-    },
-    [recordHistory]
-  );
-
-  const handleBibleAdd = useCallback(
-    (name: string, kind: BibleKind) => {
-      const normalized = name.trim().toUpperCase();
-      if (!normalized) return;
-      if (projectRef.current) recordHistory(projectRef.current);
-      dirty.current = true;
-      setProject((p) => {
-        if (!p) return p;
-        if (p.bible.some((b) => b.name === normalized && b.kind === kind)) return p;
-        return {
-          ...p,
-          bible: [...p.bible, { name: normalized, kind, note: '' }],
-          updatedAt: Date.now(),
-        };
-      });
-    },
-    [recordHistory]
-  );
-
-  /** Sheets are stored on the Bible entry, creating it if the writer is
-   * filling in a name that so far only exists in the script. */
-  const handleBibleSheetChange = useCallback(
-    (name: string, kind: BibleKind, sheet: SheetSection[]) => {
-      if (projectRef.current) recordHistory(projectRef.current);
-      dirty.current = true;
-      setProject((p) => {
-        if (!p) return p;
-        const exists = p.bible.some((b) => b.name === name && b.kind === kind);
-        const bible = exists
-          ? p.bible.map((b) =>
-              b.name === name && b.kind === kind ? { ...b, sheet } : b
-            )
-          : [...p.bible, { name, kind, note: '', sheet }];
-        return { ...p, bible, updatedAt: Date.now() };
-      });
-    },
-    [recordHistory]
-  );
-
-  /** Promotes a sheet's layout — its sections and labels, without the
-   * answers — to the shape new sheets of that kind start from. */
-  const handleSaveSheetTemplate = useCallback(
-    (kind: BibleKind, sheet: SheetSection[]) => {
-      if (projectRef.current) recordHistory(projectRef.current);
-      dirty.current = true;
-      setProject((p) => {
-        if (!p) return p;
-        const current = p.sheetTemplates ?? builtInTemplates();
-        return {
-          ...p,
-          sheetTemplates: { ...current, [kind]: toTemplate(sheet) },
-          updatedAt: Date.now(),
-        };
-      });
-    },
-    [recordHistory, t]
-  );
-
-  const handleBibleRemove = useCallback(
-    (name: string, kind: BibleKind) => {
-      if (projectRef.current) recordHistory(projectRef.current);
-      dirty.current = true;
-      setProject((p) =>
-        p
-          ? {
-              ...p,
-              bible: p.bible.filter((b) => !(b.name === name && b.kind === kind)),
-              updatedAt: Date.now(),
-            }
-          : p
-      );
+      setProject((p) => (p ? fn(p) : p));
     },
     [recordHistory]
   );
@@ -561,6 +468,30 @@ export default function Editor() {
     exportPdf(project, script.id, `${script.name || project.name || 'script'}.pdf`);
   }, [project, script]);
 
+  /** Script and title page swap the main pane; the Bible and the reports
+   * open in the drawer, and asking for the open one again closes it. */
+  const show = useCallback((target: EditorView) => {
+    if (target === 'bible' || target === 'reports') {
+      setDrawer((d) => (d === target ? null : target));
+    } else {
+      setView(target);
+    }
+  }, []);
+  const showing = useCallback(
+    (target: EditorView) => target === view || target === drawer,
+    [view, drawer]
+  );
+
+  // Arriving from the project page's Bible or reports: go to the line asked for.
+  const location = useLocation();
+  const arrivalFocus = (location.state as { focus?: string } | null)?.focus;
+  const arrived = useRef(false);
+  useEffect(() => {
+    if (loading || arrived.current || !arrivalFocus) return;
+    arrived.current = true;
+    if (script?.elements.some((el) => el.id === arrivalFocus)) handleJump(arrivalFocus);
+  }, [loading, arrivalFocus, script, handleJump]);
+
   // Publishes this script's actions to the menus and keyboard. Only the
   // active tab's editor is heard (see useRegisterEditorCommands).
   useRegisterEditorCommands(
@@ -573,8 +504,8 @@ export default function Editor() {
         find: () => setFindOpen(true),
         exportFountain: handleExportFountain,
         exportPdf: handleExportPdf,
-        setView,
-        view,
+        show,
+        showing,
         canUndo,
         canRedo,
       }),
@@ -585,7 +516,8 @@ export default function Editor() {
         handleRedo,
         handleExportFountain,
         handleExportPdf,
-        view,
+        show,
+        showing,
         canUndo,
         canRedo,
       ]
@@ -611,8 +543,8 @@ export default function Editor() {
 
   const isShow = project.kind === 'show';
 
-  // Only a show has somewhere to go back to inside its tab — the episode
-  // list. Home is a tab of its own, as in Figma, so a movie has no back.
+  // Back is the project page, for a movie as for a show; Home is a tab of
+  // its own, as in Figma.
   function handleBack() {
     flushDraft();
     navigate(`/project/${projectId}`);
@@ -622,11 +554,9 @@ export default function Editor() {
     <div className="editor">
       <header className="toolbar">
         <div className="toolbar-group">
-          {isShow && (
-            <button type="button" className="btn btn-ghost" onClick={handleBack}>
-              ← {t.backToEpisodes}
-            </button>
-          )}
+          <button type="button" className="btn btn-ghost" onClick={handleBack}>
+            ← {t.backToProject}
+          </button>
           <span className="toolbar-project-name">
             {project.name}
             {isShow ? ` · ${script.name}` : ''}
@@ -692,9 +622,9 @@ export default function Editor() {
                 key={id}
                 type="button"
                 role="tab"
-                aria-selected={view === id}
-                className={`view-btn ${view === id ? 'is-active' : ''}`}
-                onClick={() => setView(id)}
+                aria-selected={showing(id)}
+                className={`view-btn ${showing(id) ? 'is-active' : ''}`}
+                onClick={() => show(id)}
               >
                 {label}
               </button>
@@ -770,50 +700,25 @@ export default function Editor() {
         </div>
       )}
 
-      <div className="editor-body">
-        {/* The scene navigator belongs to the script; the Bible and the
-            reports need the width more than they need a list of scenes. */}
-        {view !== 'bible' && view !== 'reports' && (
-          <Sidebar
-            elements={script.elements}
-            pageStarts={pageStarts}
-            onJump={handleJump}
-            onReorderScenes={handleReorderScenes}
-          />
-        )}
+      <div className={`editor-body ${drawer ? 'has-drawer' : ''}`}>
+        <Sidebar
+          elements={script.elements}
+          pageStarts={pageStarts}
+          onJump={handleJump}
+          onReorderScenes={handleReorderScenes}
+        />
 
         <main
           ref={mainRef}
           className={`editor-main ${allSelected ? 'is-all-selected' : ''}`}
         >
-          {view === 'bible' ? (
-            <BibleView
-              project={project}
-              script={script}
-              onNoteChange={handleBibleNoteChange}
-              onSheetChange={handleBibleSheetChange}
-              onSaveTemplate={handleSaveSheetTemplate}
-              onAdd={handleBibleAdd}
-              onRemove={handleBibleRemove}
-              onJump={handleJump}
-            />
-          ) : (
-            <>
-              {/* The pages stay mounted under the reports, which read their
-                  page numbers from the breaks those pages measured. */}
-              {view === 'reports' && (
-                <ReportsView
-                  elements={script.elements}
-                  pageStarts={pageStarts}
-                  onJump={handleJump}
-                />
-              )}
+          <>
               {/* Both stay mounted (regardless of which is active on
                   screen) so PDF export (window.print) always includes the
                   title page followed by the script pages. */}
               <TitlePageView
                 titlePage={project.titlePage}
-                onChange={handleTitlePageChange}
+                onChange={(titlePage) => editProject((p) => setTitlePage(p, titlePage))}
                 className={view === 'title' ? '' : 'print-only'}
               />
               <ScriptPages
@@ -838,12 +743,57 @@ export default function Editor() {
                   />
                 )}
               />
-            </>
-          )}
+          </>
           {/* These keys only do anything while writing, so they only show
               there — the Bible and the title page have their own controls. */}
           {view === 'script' && <p className="shortcuts-hint">{t.shortcutsHint}</p>}
         </main>
+
+        {/* This episode's Bible or reports, beside the script rather than
+            instead of it. The pages stay laid out underneath, which is where
+            the reports get their page numbers. */}
+        {drawer && (
+          <aside
+            className="editor-drawer"
+            aria-label={drawer === 'bible' ? t.bibleTab : t.reportsTab}
+          >
+            <header className="editor-drawer-header">
+              <span>{drawer === 'bible' ? t.bibleTab : t.reportsTab}</span>
+              <button
+                type="button"
+                className="icon-btn"
+                title={t.close}
+                onClick={() => setDrawer(null)}
+              >
+                ✕
+              </button>
+            </header>
+            <div className="editor-drawer-body">
+              {drawer === 'bible' ? (
+                <BibleView
+                  project={project}
+                  scope={script}
+                  compact
+                  onEdit={editProject}
+                  onJump={handleJump}
+                />
+              ) : (
+                <ReportsView
+                  parts={[
+                    {
+                      scriptId: script.id,
+                      name: script.name,
+                      elements: script.elements,
+                      pageStarts,
+                    },
+                  ]}
+                  compact
+                  onJump={handleJump}
+                />
+              )}
+            </div>
+          </aside>
+        )}
       </div>
     </div>
   );
