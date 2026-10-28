@@ -297,7 +297,7 @@ export default function ProjectPage() {
         {section === 'reports' && (
           <>
             <MeasuredPages scripts={project.scripts} onMeasured={onMeasured} />
-            <ReportsView parts={parts} series={isShow} onJump={jump} />
+            <ReportsView parts={parts} series={isShow} bible={project.bible} onJump={jump} />
           </>
         )}
       </div>

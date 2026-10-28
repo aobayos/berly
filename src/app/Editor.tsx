@@ -22,6 +22,7 @@ import {
 } from '@/services/storage/documents';
 import { toFountain } from '@/services/fountain';
 import { extractCharacters, extractPlaces } from '@/services/suggestions';
+import { characterAliases } from '@/services/characterAliases';
 import { useI18n } from '@/i18n';
 import { useSelectAll } from '@/components/editor/useSelectAll';
 import ElementBlock, { type FocusRequest } from '@/components/editor/ElementBlock';
@@ -249,7 +250,14 @@ export default function Editor() {
       project ? project.bible.filter((b) => b.kind === kind).map((b) => b.name) : [];
     return {
       characters: project
-        ? [...new Set([...extractCharacters(project.scripts), ...bibleNames('character')])].sort()
+        ? [
+            ...new Set([
+              ...extractCharacters(project.scripts),
+              ...bibleNames('character'),
+              // Either of a character's names can be typed in a cue.
+              ...characterAliases(project.bible),
+            ]),
+          ].sort()
         : [],
       places: project
         ? [...new Set([...extractPlaces(project.scripts), ...bibleNames('location')])].sort()
@@ -788,6 +796,7 @@ export default function Editor() {
                     },
                   ]}
                   compact
+                  bible={project.bible}
                   onJump={handleJump}
                 />
               )}

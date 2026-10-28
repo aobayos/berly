@@ -18,6 +18,7 @@ import type {
 } from '@/model/types';
 import { extractCharacters, extractPlaces } from '@/services/suggestions';
 import { aggregateCharacterStats, characterStats } from '@/services/characterStats';
+import { aliasConflict, characterResolver } from '@/services/characterAliases';
 import {
   isSheetEmpty,
   move,
@@ -28,7 +29,9 @@ import {
   sectionTitle,
 } from '@/services/characterSheet';
 import {
+  addAlias,
   addBibleEntry,
+  removeAlias,
   removeBibleEntry,
   saveSheetTemplate,
   setBibleNote,
@@ -54,6 +57,8 @@ interface Row {
   meta: string;
   started: boolean;
   firstElementId?: string;
+  /** Other names this character is cued by (characters only). */
+  aliases?: string[];
 }
 
 interface Selection {
@@ -82,17 +87,21 @@ export default function BibleView({
   const selectedName = (kind: BibleKind) =>
     scope && selected?.kind === kind ? [selected.name] : [];
 
+  // A cue under an alias (or a slash cue) counts as the character it names,
+  // so HERO TOO's lines are KEVIN's and HERO TOO gets no row of its own.
+  const resolve = useMemo(() => characterResolver(project.bible), [project.bible]);
+
   const characterRows = useMemo<Row[]>(() => {
     const names = new Set<string>([
-      ...extractCharacters(scripts),
+      ...extractCharacters(scripts).map(resolve),
       ...(scope ? [] : project.bible.filter((b) => b.kind === 'character').map((b) => b.name)),
       ...selectedName('character'),
     ]);
-    const totals = aggregateCharacterStats(scripts);
+    const totals = aggregateCharacterStats(scripts, resolve);
     // Where each name first appears, in script order: the jump target.
     const firstIds = new Map<string, string>();
     for (const s of scripts) {
-      for (const stat of characterStats(s.elements)) {
+      for (const stat of characterStats(s.elements, resolve)) {
         if (!firstIds.has(stat.name)) firstIds.set(stat.name, stat.firstElementId);
       }
     }
@@ -110,11 +119,12 @@ export default function BibleView({
           project.bible.find((b) => b.name === name && b.kind === 'character')?.sheet
         ),
         firstElementId: firstIds.get(name),
+        aliases: entry(name, 'character')?.aliases,
       };
     });
-    // selectedName reads `selected`, which is in the list.
+    // selectedName and entry read `selected` and `project`, which are listed.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project, scripts, scope, selected, t]);
+  }, [project, scripts, scope, selected, resolve, t]);
 
   const locationRows = useMemo<Row[]>(() => {
     const names = new Set<string>([
@@ -296,6 +306,9 @@ function IndexSection({
                       </span>
                     )}
                   </span>
+                  {row.aliases?.length ? (
+                    <span className="bible-index-aliases">{row.aliases.join(' · ')}</span>
+                  ) : null}
                   {row.meta && <span className="char-meta">{row.meta}</span>}
                 </button>
               </li>
@@ -357,6 +370,9 @@ function SheetEditor({
             <span className="sheet-title">{row.name}</span>
           )}
           <span className="char-meta">{row.meta}</span>
+          {row.kind === 'character' && (
+            <AliasEditor project={project} owner={row.name} onEdit={onEdit} />
+          )}
         </div>
         <button
           type="button"
@@ -569,5 +585,82 @@ function SheetEditor({
         {templateSaved && <span className="char-meta">{t.sheetTemplateSaved}</span>}
       </footer>
     </section>
+  );
+}
+
+/** The other names a character is cued by. Adding one merges that name's
+ * lines into this character everywhere — the index, the stats, the reports —
+ * while the script keeps whichever name the writer typed. */
+function AliasEditor({
+  project,
+  owner,
+  onEdit,
+}: {
+  project: Project;
+  owner: string;
+  onEdit: (fn: (project: Project) => Project) => void;
+}) {
+  const { t } = useI18n();
+  const [value, setValue] = useState('');
+  const [problem, setProblem] = useState<string | null>(null);
+  const aliases =
+    project.bible.find((b) => b.kind === 'character' && b.name === owner)?.aliases ?? [];
+
+  function add() {
+    const alias = value.trim().toUpperCase();
+    if (!alias) return;
+    const conflict = aliasConflict(project.bible, owner, alias);
+    if (conflict) {
+      setProblem(
+        conflict.kind === 'self'
+          ? t.aliasIsOwnName
+          : conflict.kind === 'name'
+            ? `${alias} — ${t.aliasHasSheet}`
+            : `${alias} — ${t.aliasBelongsTo} ${conflict.other}`
+      );
+      return;
+    }
+    onEdit((p) => addAlias(p, owner, alias));
+    setValue('');
+    setProblem(null);
+  }
+
+  return (
+    <div className="alias-editor">
+      <span className="alias-label">{t.aliasLabel}</span>
+      <ul className="alias-list">
+        {aliases.map((alias) => (
+          <li key={alias} className="alias-chip">
+            {alias}
+            <button
+              type="button"
+              className="alias-remove"
+              title={t.removeEntry}
+              onClick={() => onEdit((p) => removeAlias(p, owner, alias))}
+            >
+              ✕
+            </button>
+          </li>
+        ))}
+        <li>
+          <input
+            className="alias-input"
+            value={value}
+            placeholder={t.aliasPlaceholder}
+            onChange={(e) => {
+              setValue(e.target.value);
+              setProblem(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                add();
+              }
+            }}
+          />
+        </li>
+      </ul>
+      {problem && <p className="alias-problem">{problem}</p>}
+    </div>
   );
 }
