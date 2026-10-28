@@ -20,19 +20,22 @@ import { isFileBased } from '@/services/storage/documents';
 
 export type EditorView = 'script' | 'title' | 'bible' | 'reports';
 
-/** What the editor of the *active* tab can currently do. Published by
- * Editor.tsx; empty when no script is open. */
+/** What the *active* project tab can currently do. Published by Editor.tsx,
+ * and by ProjectPage.tsx with the subset that makes sense without a script
+ * open (the optional members); empty on the Home tab. */
 export interface EditorCommands {
   save(): void;
   /** Desktop only — the web build has no file to point somewhere else. */
   saveAs(): void;
-  undo(): void;
-  redo(): void;
-  find(): void;
-  exportFountain(): void;
-  exportPdf(): void;
-  setView(view: EditorView): void;
-  view: EditorView;
+  undo?(): void;
+  redo?(): void;
+  find?(): void;
+  exportFountain?(): void;
+  exportPdf?(): void;
+  /** The editor shows the script or title page, and the Bible or reports in
+   * a drawer beside it; the project page has a section for each. */
+  show(view: EditorView): void;
+  showing(view: EditorView): boolean;
   canUndo: boolean;
   canRedo: boolean;
 }
@@ -190,16 +193,16 @@ export function useCommands(ctx: CommandContext): Command[] {
         id: 'file.exportFountain',
         label: t.exportFountain,
         group: 'project',
-        enabled: Boolean(editor),
-        run: () => editor?.exportFountain(),
+        enabled: Boolean(editor?.exportFountain),
+        run: () => editor?.exportFountain?.(),
       },
       {
         id: 'file.exportPdf',
         label: t.exportPdf,
         accelerator: 'Mod+P',
         group: 'project',
-        enabled: Boolean(editor),
-        run: () => editor?.exportPdf(),
+        enabled: Boolean(editor?.exportPdf),
+        run: () => editor?.exportPdf?.(),
       },
       {
         id: 'edit.undo',
@@ -207,7 +210,7 @@ export function useCommands(ctx: CommandContext): Command[] {
         accelerator: 'Mod+Z',
         group: 'edit',
         enabled: Boolean(editor?.canUndo),
-        run: () => editor?.undo(),
+        run: () => editor?.undo?.(),
       },
       {
         id: 'edit.redo',
@@ -215,15 +218,15 @@ export function useCommands(ctx: CommandContext): Command[] {
         accelerator: 'Mod+Shift+Z',
         group: 'edit',
         enabled: Boolean(editor?.canRedo),
-        run: () => editor?.redo(),
+        run: () => editor?.redo?.(),
       },
       {
         id: 'edit.find',
         label: t.find,
         accelerator: 'Mod+F',
         group: 'edit',
-        enabled: Boolean(editor),
-        run: () => editor?.find(),
+        enabled: Boolean(editor?.find),
+        run: () => editor?.find?.(),
       },
       {
         id: 'view.script',
@@ -234,7 +237,7 @@ export function useCommands(ctx: CommandContext): Command[] {
         accelerator: 'Mod+Alt+S',
         group: 'view',
         enabled: Boolean(editor),
-        run: () => editor?.setView('script'),
+        run: () => editor?.show('script'),
       },
       {
         id: 'view.title',
@@ -242,7 +245,7 @@ export function useCommands(ctx: CommandContext): Command[] {
         accelerator: 'Mod+Alt+T',
         group: 'view',
         enabled: Boolean(editor),
-        run: () => editor?.setView('title'),
+        run: () => editor?.show('title'),
       },
       {
         id: 'view.bible',
@@ -250,7 +253,7 @@ export function useCommands(ctx: CommandContext): Command[] {
         accelerator: 'Mod+Alt+B',
         group: 'view',
         enabled: Boolean(editor),
-        run: () => editor?.setView('bible'),
+        run: () => editor?.show('bible'),
       },
       {
         id: 'view.reports',
@@ -258,7 +261,7 @@ export function useCommands(ctx: CommandContext): Command[] {
         accelerator: 'Mod+Alt+R',
         group: 'view',
         enabled: Boolean(editor),
-        run: () => editor?.setView('reports'),
+        run: () => editor?.show('reports'),
       },
       {
         id: 'tab.close',
@@ -384,10 +387,10 @@ export function useMenus(commands: Command[], ctx: CommandContext): MenuSpec[] {
         label: t.menuView,
         mnemonic: 'v',
         entries: () => [
-          item('view.script', { checked: editor?.view === 'script' }),
-          item('view.title', { checked: editor?.view === 'title' }),
-          item('view.bible', { checked: editor?.view === 'bible' }),
-          item('view.reports', { checked: editor?.view === 'reports' }),
+          item('view.script', { checked: editor?.showing('script') }),
+          item('view.title', { checked: editor?.showing('title') }),
+          item('view.bible', { checked: editor?.showing('bible') }),
+          item('view.reports', { checked: editor?.showing('reports') }),
           { separator: true },
           item('tab.next'),
           item('tab.prev'),

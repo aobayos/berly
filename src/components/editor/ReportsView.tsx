@@ -1,27 +1,31 @@
-// The Reports pane: Trelby's script, character, scene and location reports,
-// read off the script as it stands. Every row leads back to the script.
+// Trelby's script, character, scene and location reports, read off the
+// scripts as they stand: one episode in the editor's drawer, the whole
+// project on the project page. Every row leads back to the script.
 import { useMemo, useState, type ReactNode } from 'react';
-import type { ScriptElement } from '@/model/types';
 import { ELEMENT_TYPES } from '@/model/types';
-import { pageRanges, scriptReport } from '@/services/scriptReport';
+import { pageRanges, projectReport, type ReportPart } from '@/services/scriptReport';
 import { useI18n } from '@/i18n';
 
 type Tab = 'overview' | 'characters' | 'scenes' | 'locations';
 
 interface Props {
-  elements: ScriptElement[];
-  /** The breaks ScriptPages measured — see scriptReport(). */
-  pageStarts: number[];
+  /** The scripts reported on, each with the breaks ScriptPages measured. */
+  parts: ReportPart[];
+  /** A whole series: rows say which episodes rather than which pages, since
+   * page numbers only mean something within one script. */
+  series?: boolean;
+  /** Drawer width: the less essential columns go. */
+  compact?: boolean;
   onJump(elementId: string): void;
 }
 
-export default function ReportsView({ elements, pageStarts, onJump }: Props) {
+export default function ReportsView({ parts, series = false, compact = false, onJump }: Props) {
   const { t, lang } = useI18n();
   const [tab, setTab] = useState<Tab>('overview');
-  const report = useMemo(
-    () => scriptReport(elements, pageStarts),
-    [elements, pageStarts]
-  );
+  const report = useMemo(() => projectReport(parts), [parts]);
+  const where = (row: { pages: number[]; episodes: number[] }) =>
+    pageRanges(series ? row.episodes : row.pages);
+  const whereLabel = series ? t.reportEpisodes : t.pagesTab;
 
   const number = useMemo(() => new Intl.NumberFormat(lang), [lang]);
   const percent = useMemo(
@@ -36,7 +40,7 @@ export default function ReportsView({ elements, pageStarts, onJump }: Props) {
       speeches: (c) => c.speeches,
       words: (c) => c.words,
       scenes: (c) => c.scenes,
-      pages: (c) => c.pages.length,
+      pages: (c) => (series ? c.episodes : c.pages).length,
     },
     'words'
   );
@@ -45,7 +49,7 @@ export default function ReportsView({ elements, pageStarts, onJump }: Props) {
     {
       name: (l) => l.name,
       scenes: (l) => l.scenes,
-      pages: (l) => l.pages.length,
+      pages: (l) => (series ? l.episodes : l.pages).length,
     },
     'scenes'
   );
@@ -57,9 +61,11 @@ export default function ReportsView({ elements, pageStarts, onJump }: Props) {
     ['locations', t.bibleLocations],
   ];
 
+  const className = `reports ${compact ? 'reports-compact' : ''}`;
+
   if (report.words === 0) {
     return (
-      <div className="reports">
+      <div className={className}>
         <p className="home-empty">{t.reportEmpty}</p>
       </div>
     );
@@ -68,7 +74,7 @@ export default function ReportsView({ elements, pageStarts, onJump }: Props) {
   const otherWords = report.words - report.dialogueWords - report.actionWords;
 
   return (
-    <div className="reports">
+    <div className={className}>
       <div className="reports-tabs" role="tablist">
         {tabs.map(([id, label]) => (
           <button
@@ -89,6 +95,7 @@ export default function ReportsView({ elements, pageStarts, onJump }: Props) {
           <div className="report-tiles">
             {(
               [
+                ...(series ? [[t.reportEpisodes, report.episodes.length] as const] : []),
                 [t.pagesTab, report.pages],
                 [t.sceneNavigator, report.scenes.length],
                 [t.bibleCharacters, report.characters.length],
@@ -131,6 +138,34 @@ export default function ReportsView({ elements, pageStarts, onJump }: Props) {
             </ul>
           </section>
 
+          {series && (
+            <section className="report-section">
+              <h3 className="bible-heading">{t.reportEpisodes}</h3>
+              <table className="report-table">
+                <thead>
+                  <tr>
+                    <th className="num">#</th>
+                    <th>{t.reportName}</th>
+                    <th className="num">{t.pagesTab}</th>
+                    <th className="num">{t.sceneNavigator}</th>
+                    <th className="num">{t.reportWords}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.episodes.map((e) => (
+                    <tr key={e.scriptId}>
+                      <td className="num">{e.number}</td>
+                      <td>{e.name}</td>
+                      <td className="num">{number.format(e.pages)}</td>
+                      <td className="num">{number.format(e.scenes)}</td>
+                      <td className="num">{number.format(e.words)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          )}
+
           <section className="report-section">
             <h3 className="bible-heading">{t.reportElements}</h3>
             <table className="report-table report-table-compact">
@@ -165,7 +200,7 @@ export default function ReportsView({ elements, pageStarts, onJump }: Props) {
                 {t.sceneNavigator}
               </SortHeader>
               <SortHeader sort={characters} k="pages">
-                {t.pagesTab}
+                {whereLabel}
               </SortHeader>
             </tr>
           </thead>
@@ -192,7 +227,7 @@ export default function ReportsView({ elements, pageStarts, onJump }: Props) {
                   </span>
                 </td>
                 <td className="num">{number.format(c.scenes)}</td>
-                <td className="report-pages">{pageRanges(c.pages)}</td>
+                <td className="report-pages">{where(c)}</td>
               </tr>
             ))}
           </tbody>
@@ -203,10 +238,11 @@ export default function ReportsView({ elements, pageStarts, onJump }: Props) {
         <table className="report-table">
           <thead>
             <tr>
+              {series && <th className="num">{t.reportEpisode}</th>}
               <th className="num">#</th>
               <th>{t.reportHeading}</th>
               <th>{t.page}</th>
-              <th>{t.bibleCharacters}</th>
+              <th className="col-optional">{t.bibleCharacters}</th>
               <th className="num">{t.reportSpeeches}</th>
               <th className="num">{t.reportWords}</th>
             </tr>
@@ -214,6 +250,7 @@ export default function ReportsView({ elements, pageStarts, onJump }: Props) {
           <tbody>
             {report.scenes.map((s) => (
               <tr key={s.elementId}>
+                {series && <td className="num">{s.episode}</td>}
                 <td className="num">{s.number}</td>
                 <td>
                   <button
@@ -229,7 +266,7 @@ export default function ReportsView({ elements, pageStarts, onJump }: Props) {
                     ? s.firstPage
                     : `${s.firstPage}–${s.lastPage}`}
                 </td>
-                <td className="report-names">{s.speakers.join(', ')}</td>
+                <td className="report-names col-optional">{s.speakers.join(', ')}</td>
                 <td className="num">{number.format(s.speeches)}</td>
                 <td className="num">{number.format(s.words)}</td>
               </tr>
@@ -252,9 +289,9 @@ export default function ReportsView({ elements, pageStarts, onJump }: Props) {
                   {t.sceneNavigator}
                 </SortHeader>
                 <SortHeader sort={locations} k="pages">
-                  {t.pagesTab}
+                  {whereLabel}
                 </SortHeader>
-                <th>{t.bibleCharacters}</th>
+                <th className="col-optional">{t.bibleCharacters}</th>
               </tr>
             </thead>
             <tbody>
@@ -270,8 +307,8 @@ export default function ReportsView({ elements, pageStarts, onJump }: Props) {
                     </button>
                   </td>
                   <td className="num">{number.format(l.scenes)}</td>
-                  <td className="report-pages">{pageRanges(l.pages)}</td>
-                  <td className="report-names">{l.characters.join(', ')}</td>
+                  <td className="report-pages">{where(l)}</td>
+                  <td className="report-names col-optional">{l.characters.join(', ')}</td>
                 </tr>
               ))}
             </tbody>

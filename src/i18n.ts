@@ -49,7 +49,9 @@ const en = {
   renamePrompt: 'New name:',
 
   // Editor
-  backToEpisodes: 'Episodes',
+  backToProject: 'Project',
+  episodesTab: 'Episodes',
+  noEpisodes: 'No episodes yet',
   titlePage: 'Title Page',
   script: 'Script',
   saved: 'Saved',
@@ -97,6 +99,8 @@ const en = {
   reportShare: 'Share of dialogue',
   reportHeading: 'Scene heading',
   reportLocation: 'Location',
+  reportEpisodes: 'Episodes',
+  reportEpisode: 'Ep.',
 
   // Title page fields
   tpTitle: 'Title',
@@ -319,7 +323,9 @@ const fr: Dict = {
   renameEpisode: 'Renommer',
   renamePrompt: 'Nouveau nom :',
 
-  backToEpisodes: 'Épisodes',
+  backToProject: 'Projet',
+  episodesTab: 'Épisodes',
+  noEpisodes: 'Aucun épisode pour l’instant',
   titlePage: 'Page de titre',
   script: 'Scénario',
   saved: 'Enregistré',
@@ -364,6 +370,8 @@ const fr: Dict = {
   reportShare: 'Part du dialogue',
   reportHeading: 'En-tête de scène',
   reportLocation: 'Lieu',
+  reportEpisodes: 'Épisodes',
+  reportEpisode: 'Ép.',
 
   tpTitle: 'Titre',
   tpCredit: 'Mention (ex. Écrit par)',

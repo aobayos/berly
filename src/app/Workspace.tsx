@@ -14,7 +14,7 @@ import {
   useParams,
 } from 'react-router-dom';
 import Editor from '@/app/Editor';
-import EpisodeList from '@/app/EpisodeList';
+import ProjectPage from '@/app/ProjectPage';
 import { ActiveTabProvider, useTabs, type Tab } from '@/contexts/tabs';
 
 /** Remounts the editor when the target script changes. */
@@ -61,7 +61,7 @@ function TabPane({ tab, active }: { tab: Tab; active: boolean }) {
         <MemoryRouter initialEntries={[tab.path]}>
           <RouteSync tab={tab} />
           <Routes>
-            <Route path="/project/:projectId" element={<EpisodeList />} />
+            <Route path="/project/:projectId" element={<ProjectPage />} />
             <Route
               path="/project/:projectId/script/:scriptId"
               element={<EditorRoute />}
