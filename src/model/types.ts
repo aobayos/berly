@@ -15,6 +15,10 @@ export interface ScriptElement {
   id: string;
   type: ElementType;
   text: string;
+  /** The writer's note on this line — a reminder, a reader's comment. Never
+   * part of the page: it takes no room, and neither the PDF nor print
+   * carries it. Absent when there is none, never an empty string. */
+  note?: string;
 }
 
 /** One screenplay document: the whole film for a movie, one episode for a show. */

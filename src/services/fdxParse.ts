@@ -1,7 +1,7 @@
 // Final Draft (.fdx) -> BERLY. FDX is plain XML in which every paragraph
 // states its own type, so no library is needed — DOMParser plus the table
 // below is the whole parser. See CLAUDE.md for why no npm package is used.
-import type { ElementType } from '@/model/types';
+import type { ElementType, ScriptElement } from '@/model/types';
 import { newElement } from '@/model/types';
 import type { ImportedScreenplay } from '@/services/screenplayImport';
 
@@ -24,7 +24,7 @@ export function parseFdx(xml: string): ImportedScreenplay {
     throw new Error('Not a readable Final Draft file');
   }
 
-  const elements = [];
+  const elements: ScriptElement[] = [];
   const dropped: Record<string, number> = {};
 
   // Only <Content> — a .fdx also carries <TitlePage>, <SmartType> and revision
@@ -34,10 +34,24 @@ export function parseFdx(xml: string): ImportedScreenplay {
 
   for (const paragraph of content.querySelectorAll(':scope > Paragraph')) {
     const sourceType = paragraph.getAttribute('Type') ?? 'Unknown';
+    // A ScriptNote sits inside the paragraph it annotates, with paragraphs
+    // and <Text> of its own: those are the note, not the script.
     const text = [...paragraph.querySelectorAll('Text')]
+      .filter((node) => !node.closest('ScriptNote'))
       .map((node) => node.textContent ?? '')
       .join('')
       .trim();
+    const note = [...paragraph.querySelectorAll(':scope > ScriptNote')]
+      .map((scriptNote) =>
+        [...scriptNote.querySelectorAll('Paragraph')]
+          .map((p) =>
+            [...p.querySelectorAll('Text')].map((node) => node.textContent ?? '').join('')
+          )
+          .join('\n')
+          .trim()
+      )
+      .filter(Boolean)
+      .join('\n');
 
     // Centering is an alignment in Final Draft, not a paragraph type, so it
     // has to be read before the type table or it arrives as plain action.
@@ -48,8 +62,13 @@ export function parseFdx(xml: string): ImportedScreenplay {
       dropped[sourceType] = (dropped[sourceType] ?? 0) + 1;
       continue;
     }
-    if (!text) continue;
-    elements.push(newElement(type, text));
+    if (!text) {
+      if (note) dropped.ScriptNote = (dropped.ScriptNote ?? 0) + 1;
+      continue;
+    }
+    const element = newElement(type, text);
+    if (note) element.note = note;
+    elements.push(element);
   }
 
   // Final Draft's title page is a free-form layout rather than named fields,

@@ -3,6 +3,7 @@ import type { ElementType, ScriptElement } from '@/model/types';
 import { ELEMENT_TYPES } from '@/model/types';
 import { useI18n } from '@/i18n';
 import { clipboardEntries, useContextMenu } from '@/contexts/contextMenu';
+import NoteMarker from '@/components/editor/NoteMarker';
 import {
   getInsertSuggestions,
   getReplaceSuggestions,
@@ -48,6 +49,10 @@ interface Props {
   onMergeBack: (id: string) => void;
   onNavigate: (id: string, direction: -1 | 1) => void;
   onFocus: (id: string) => void;
+  /** Whether this line's note box is the one open. */
+  noteOpen: boolean;
+  onOpenNote: (id: string) => void;
+  onCloseNote: (id: string, note: string, refocus: boolean) => void;
 }
 
 const AUTO_SUGGEST_TYPES: ElementType[] = ['scene', 'character', 'transition'];
@@ -65,6 +70,9 @@ export default function ElementBlock({
   onMergeBack,
   onNavigate,
   onFocus,
+  noteOpen,
+  onOpenNote,
+  onCloseNote,
 }: Props) {
   const { t } = useI18n();
   const showContextMenu = useContextMenu();
@@ -369,6 +377,12 @@ export default function ElementBlock({
           }
         },
       },
+      { separator: true },
+      {
+        label: element.note ? t.ctxEditNote : t.ctxAddNote,
+        accelerator: 'Mod+Alt+N',
+        onSelect: () => onOpenNote(element.id),
+      },
     ]);
   }
 
@@ -396,6 +410,12 @@ export default function ElementBlock({
         onContextMenu={handleContextMenu}
         onFocus={() => onFocus(element.id)}
         onBlur={() => setMenu(null)}
+      />
+      <NoteMarker
+        note={element.note}
+        open={noteOpen}
+        onOpen={() => onOpenNote(element.id)}
+        onClose={(note, refocus) => onCloseNote(element.id, note, refocus)}
       />
       {menu && menu.items.length > 0 && (
         <ul

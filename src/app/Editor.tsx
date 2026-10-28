@@ -6,7 +6,7 @@ import {
   useState,
 } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import type { BibleKind, ElementType, Project, Script } from '@/model/types';
+import type { BibleKind, ElementType, Project, Script, ScriptElement } from '@/model/types';
 import { ELEMENT_TYPES, NEXT_ELEMENT_TYPE, newElement } from '@/model/types';
 import { setTitlePage } from '@/services/bibleEdit';
 import { downloadFile, exportPdf } from '@/services/storage';
@@ -54,6 +54,16 @@ export default function Editor() {
   const [drawer, setDrawer] = useState<'bible' | 'reports' | null>(null);
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
+  // The same, but current the moment focus moves: a shortcut pressed right
+  // after a click must reach that line, not the one the published commands
+  // still knew about.
+  const focusedRef = useRef<string | null>(null);
+  const handleFocus = useCallback((id: string) => {
+    focusedRef.current = id;
+    setFocusedId(id);
+  }, []);
+  // The line whose note box is open; one at a time.
+  const [noteOpenId, setNoteOpenId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<'saved' | 'saving'>('saved');
   const [findOpen, setFindOpen] = useState(false);
   const [findQuery, setFindQuery] = useState('');
@@ -354,7 +364,10 @@ export default function Editor() {
         const prev = s.elements[i - 1];
         const current = s.elements[i];
         const elements = [...s.elements];
+        // Two lines becoming one keep both notes rather than losing one.
+        const note = [prev.note, current.note].filter(Boolean).join('\n');
         elements[i - 1] = { ...prev, text: prev.text + current.text };
+        if (note) elements[i - 1].note = note;
         elements.splice(i, 1);
         requestFocus(prev.id, prev.text.length);
         return { ...s, elements };
@@ -372,6 +385,36 @@ export default function Editor() {
       lastHistoryPush.current = 0;
       touchScript((s) => ({ ...s, elements: [next] }));
       requestFocus(next.id, 'end');
+    },
+    [script, touchScript, requestFocus]
+  );
+
+  /** Opens the note box on a line — the context menu, the margin marker, or
+   * Ctrl+Alt+N on the line being written. */
+  const handleOpenNote = useCallback((id: string) => {
+    setView('script');
+    setNoteOpenId(id);
+  }, []);
+
+  /** Closing the box is what saves it: one undo step, and an emptied note is
+   * removed rather than stored blank. */
+  const handleCloseNote = useCallback(
+    (id: string, note: string, refocus: boolean) => {
+      setNoteOpenId((open) => (open === id ? null : open));
+      const text = note.trim();
+      if ((script?.elements.find((el) => el.id === id)?.note ?? '') !== text) {
+        lastHistoryPush.current = 0;
+        touchScript((s) => ({
+          ...s,
+          elements: s.elements.map((el) => {
+            if (el.id !== id) return el;
+            const next: ScriptElement = { ...el, note: text };
+            if (!text) delete next.note;
+            return next;
+          }),
+        }));
+      }
+      if (refocus) requestFocus(id, 'end');
     },
     [script, touchScript, requestFocus]
   );
@@ -510,6 +553,14 @@ export default function Editor() {
         undo: handleUndo,
         redo: handleRedo,
         find: () => setFindOpen(true),
+        // A note belongs to a line: the one being written in, or else the
+        // last one that was.
+        note:
+          view === 'script'
+            ? () => {
+                if (focusedRef.current) handleOpenNote(focusedRef.current);
+              }
+            : undefined,
         exportFountain: handleExportFountain,
         exportPdf: handleExportPdf,
         show,
@@ -522,6 +573,8 @@ export default function Editor() {
         handleSaveAs,
         handleUndo,
         handleRedo,
+        view,
+        handleOpenNote,
         handleExportFountain,
         handleExportPdf,
         show,
@@ -747,7 +800,10 @@ export default function Editor() {
                     onSetType={handleSetType}
                     onMergeBack={handleMergeBack}
                     onNavigate={handleNavigate}
-                    onFocus={setFocusedId}
+                    onFocus={handleFocus}
+                    noteOpen={noteOpenId === el.id}
+                    onOpenNote={handleOpenNote}
+                    onCloseNote={handleCloseNote}
                   />
                 )}
               />
