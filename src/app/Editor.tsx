@@ -31,6 +31,7 @@ import Sidebar from '@/components/editor/Sidebar';
 import TitlePageView from '@/components/editor/TitlePageView';
 import BibleView from '@/app/BibleView';
 import ReportsView from '@/components/editor/ReportsView';
+import OutlineView from '@/components/editor/OutlineView';
 import { createHistory, pushHistory, undo, redo, type HistoryStack } from '@/services/history';
 import { reorderScenes } from '@/services/sceneBlocks';
 import { useIsActiveTab, useTabs } from '@/contexts/tabs';
@@ -50,7 +51,7 @@ export default function Editor() {
   const [loading, setLoading] = useState(true);
   // The main pane, and the drawer beside it (the Bible or the reports for
   // this episode); see show().
-  const [view, setView] = useState<'script' | 'title'>('script');
+  const [view, setView] = useState<'script' | 'title' | 'outline'>('script');
   const [drawer, setDrawer] = useState<'bible' | 'reports' | null>(null);
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
@@ -70,6 +71,8 @@ export default function Editor() {
   // Measured by ScriptPages, so the sidebar's page list and the pages on
   // screen are the same pages.
   const [pageStarts, setPageStarts] = useState<number[]>([0]);
+  // Each element's measured height, which the outline sizes scenes from.
+  const heightsRef = useRef(new Map<string, number>());
 
   // The document store, not storage, is what the editor reads: this component
   // remounts on every route change (switching episodes), and unsaved edits
@@ -419,6 +422,23 @@ export default function Editor() {
     [script, touchScript, requestFocus]
   );
 
+  /** Typed on a card in the outline; coalesced into the undo history like
+   * any typing. An emptied synopsis is removed rather than stored blank. */
+  const handleSynopsis = useCallback(
+    (sceneId: string, synopsis: string) => {
+      touchScript((s) => ({
+        ...s,
+        elements: s.elements.map((el) => {
+          if (el.id !== sceneId) return el;
+          const next: ScriptElement = { ...el, synopsis };
+          if (!synopsis.trim()) delete next.synopsis;
+          return next;
+        }),
+      }));
+    },
+    [touchScript]
+  );
+
   const mainRef = useRef<HTMLElement>(null);
   const allSelected = useSelectAll(mainRef, {
     enabled: isActiveTab && view === 'script',
@@ -428,6 +448,8 @@ export default function Editor() {
 
   const handleReorderScenes = useCallback(
     (fromIndex: number, toIndex: number) => {
+      // Its own undo step, never folded into typing on a card just before.
+      lastHistoryPush.current = 0;
       touchScript((s) => ({
         ...s,
         elements: reorderScenes(s.elements, fromIndex, toIndex),
@@ -674,6 +696,7 @@ export default function Editor() {
             {(
               [
                 ['script', t.script],
+                ['outline', t.outlineTab],
                 ['title', t.titlePage],
                 ['bible', t.bibleTab],
                 ['reports', t.reportsTab],
@@ -787,6 +810,7 @@ export default function Editor() {
                 hidden={view !== 'script'}
                 onPageMouseDown={handlePageMouseDown}
                 onPageStartsChange={setPageStarts}
+                heightsRef={heightsRef}
                 renderElement={(el) => (
                   <ElementBlock
                     key={el.id}
@@ -808,6 +832,16 @@ export default function Editor() {
                 )}
               />
           </>
+          {view === 'outline' && (
+            <OutlineView
+              elements={script.elements}
+              heights={heightsRef.current}
+              bible={project.bible}
+              onJump={handleJump}
+              onSynopsis={handleSynopsis}
+              onReorderScenes={handleReorderScenes}
+            />
+          )}
           {/* These keys only do anything while writing, so they only show
               there — the Bible and the title page have their own controls. */}
           {view === 'script' && <p className="shortcuts-hint">{t.shortcutsHint}</p>}

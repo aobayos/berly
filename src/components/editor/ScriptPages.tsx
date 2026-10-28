@@ -9,7 +9,7 @@
 // Elements are never split mid-paragraph; a block that doesn't fit starts the
 // next page. See pageStarts() for why.
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
+import type { MutableRefObject, ReactNode } from 'react';
 import type { ElementType, ScriptElement } from '@/model/types';
 import { ELEMENT_TYPES } from '@/model/types';
 import {
@@ -28,6 +28,11 @@ interface Props {
   onPageMouseDown: (e: React.MouseEvent<HTMLDivElement>) => void;
   /** Reports the breaks so the sidebar's page list matches what's drawn. */
   onPageStartsChange: (starts: number[]) => void;
+  /** Filled with each element's measured height, margin included, by id —
+   * what the outline sizes scenes from. A ref rather than a callback: it
+   * changes with every wrapped line, and nothing on screen should re-render
+   * for that while the writer types. */
+  heightsRef?: MutableRefObject<Map<string, number>>;
 }
 
 function same(a: number[], b: number[]): boolean {
@@ -75,6 +80,7 @@ export default function ScriptPages({
   renderElement,
   onPageMouseDown,
   onPageStartsChange,
+  heightsRef,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [starts, setStarts] = useState<number[]>([0]);
@@ -146,6 +152,12 @@ export default function ScriptPages({
       keepWithNext: KEEP_WITH_NEXT.has(elements[i].type),
     }));
 
+    if (heightsRef) {
+      heightsRef.current = new Map(
+        boxes.map((box, i) => [elements[i].id, box.height + box.marginTop])
+      );
+    }
+
     const next = pageStarts(boxes, PAGE_CONTENT_PX);
     if (same(next, startsRef.current)) return;
     // Belt and braces: if a break ever does start oscillating, settle on one
@@ -156,7 +168,7 @@ export default function ScriptPages({
     noteCaret();
     setStarts(next);
     onPageStartsChange(next);
-  }, [elements, noteCaret, onPageStartsChange]);
+  }, [elements, noteCaret, onPageStartsChange, heightsRef]);
 
   // Layout effects, not effects: the re-flow into pages and the caret going
   // back must both happen before the browser paints, or the caret visibly
@@ -171,6 +183,24 @@ export default function ScriptPages({
     const onResize = () => measure();
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
+  }, [measure]);
+
+  // ...and with the font. Courier Prime loads with display=swap, so the first
+  // layout is in the fallback Courier, whose lines wrap differently; nothing
+  // re-renders when the real font lands, so without this the breaks stay
+  // measured in the wrong font until the next keystroke.
+  useLayoutEffect(() => {
+    if (!document.fonts) return;
+    let live = true;
+    const onFonts = () => {
+      if (live) measure();
+    };
+    void document.fonts.ready.then(onFonts);
+    document.fonts.addEventListener('loadingdone', onFonts);
+    return () => {
+      live = false;
+      document.fonts.removeEventListener('loadingdone', onFonts);
+    };
   }, [measure]);
 
   const pages: ScriptElement[][] = starts.map((start, i) =>

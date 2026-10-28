@@ -112,8 +112,11 @@ export default function ProjectPage() {
       () => ({
         save: handleSave,
         saveAs: handleSaveAs,
-        show: setSection,
+        show: (view: EditorView) => {
+          if (view !== 'outline') setSection(view);
+        },
         showing: (view: EditorView) => view === section,
+        offers: (view: EditorView) => view !== 'outline',
         canUndo: false,
         canRedo: false,
       }),

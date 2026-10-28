@@ -3,14 +3,14 @@
 // writer drag whole scenes around without touching their contents.
 import type { ScriptElement } from '@/model/types';
 
-interface SceneBlocks {
+export interface SceneBlocks {
   /** Elements before the first scene heading (rare, but possible if the
    * writer changed the first element away from 'scene') — never reordered. */
   preamble: ScriptElement[];
   blocks: ScriptElement[][];
 }
 
-function splitIntoSceneBlocks(elements: ScriptElement[]): SceneBlocks {
+export function splitIntoSceneBlocks(elements: ScriptElement[]): SceneBlocks {
   const preamble: ScriptElement[] = [];
   const blocks: ScriptElement[][] = [];
   let current: ScriptElement[] | null = null;
