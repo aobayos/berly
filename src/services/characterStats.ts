@@ -1,6 +1,7 @@
 // Per-character breakdown: how many scenes and dialogue lines each
 // character has, either within one script or totalled across a project.
 import type { Script, ScriptElement } from '@/model/types';
+import { characterName } from '@/services/suggestions';
 
 export interface CharacterStat {
   name: string;
@@ -25,7 +26,7 @@ export function characterStats(elements: ScriptElement[]): CharacterStat[] {
     }
 
     if (el.type === 'character') {
-      const name = el.text.trim().toUpperCase().replace(/\s*\(.*\)\s*$/, '');
+      const name = characterName(el.text);
       currentCharacter = name || null;
       if (currentCharacter) {
         const s = stats.get(currentCharacter) ?? {

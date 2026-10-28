@@ -36,10 +36,11 @@ import ScriptPages from '@/components/editor/ScriptPages';
 import Sidebar from '@/components/editor/Sidebar';
 import TitlePageView from '@/components/editor/TitlePageView';
 import BibleView from '@/app/BibleView';
+import ReportsView from '@/components/editor/ReportsView';
 import { createHistory, pushHistory, undo, redo, type HistoryStack } from '@/services/history';
 import { reorderScenes } from '@/services/sceneBlocks';
 import { useIsActiveTab, useTabs } from '@/contexts/tabs';
-import { useRegisterEditorCommands } from '@/contexts/commands';
+import { useRegisterEditorCommands, type EditorView } from '@/contexts/commands';
 
 const AUTOSAVE_DELAY = 1500;
 const HISTORY_COALESCE_WINDOW = 700;
@@ -53,7 +54,7 @@ export default function Editor() {
 
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'script' | 'title' | 'bible'>('script');
+  const [view, setView] = useState<EditorView>('script');
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<'saved' | 'saving'>('saved');
@@ -676,27 +677,29 @@ export default function Editor() {
         </div>
 
         <div className="toolbar-group">
-          <button
-            type="button"
-            className={`btn btn-ghost ${view === 'script' ? 'btn-active' : ''}`}
-            onClick={() => setView('script')}
-          >
-            {t.script}
-          </button>
-          <button
-            type="button"
-            className={`btn btn-ghost ${view === 'title' ? 'btn-active' : ''}`}
-            onClick={() => setView('title')}
-          >
-            {t.titlePage}
-          </button>
-          <button
-            type="button"
-            className={`btn btn-ghost ${view === 'bible' ? 'btn-active' : ''}`}
-            onClick={() => setView('bible')}
-          >
-            {t.bibleTab}
-          </button>
+          {/* One segmented control rather than four bordered buttons: it is
+              the narrower of the two, and the type bar needs the width. */}
+          <div className="view-switch" role="tablist">
+            {(
+              [
+                ['script', t.script],
+                ['title', t.titlePage],
+                ['bible', t.bibleTab],
+                ['reports', t.reportsTab],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={view === id}
+                className={`view-btn ${view === id ? 'is-active' : ''}`}
+                onClick={() => setView(id)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           {/* Exporting lives in the File menu — it belongs with Save, and the
               toolbar has to stay on one line. */}
           <button
@@ -768,9 +771,9 @@ export default function Editor() {
       )}
 
       <div className="editor-body">
-        {/* The scene navigator belongs to the script; the Bible needs the
-            width more than it needs a list of scenes. */}
-        {view !== 'bible' && (
+        {/* The scene navigator belongs to the script; the Bible and the
+            reports need the width more than they need a list of scenes. */}
+        {view !== 'bible' && view !== 'reports' && (
           <Sidebar
             elements={script.elements}
             pageStarts={pageStarts}
@@ -796,6 +799,15 @@ export default function Editor() {
             />
           ) : (
             <>
+              {/* The pages stay mounted under the reports, which read their
+                  page numbers from the breaks those pages measured. */}
+              {view === 'reports' && (
+                <ReportsView
+                  elements={script.elements}
+                  pageStarts={pageStarts}
+                  onJump={handleJump}
+                />
+              )}
               {/* Both stay mounted (regardless of which is active on
                   screen) so PDF export (window.print) always includes the
                   title page followed by the script pages. */}

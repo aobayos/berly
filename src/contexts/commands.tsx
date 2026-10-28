@@ -18,7 +18,7 @@ import type { RecentProject } from '@/desktop/types';
 import { closeWindow, isDesktop } from '@/desktop/bridge';
 import { isFileBased } from '@/services/storage/documents';
 
-export type EditorView = 'script' | 'title' | 'bible';
+export type EditorView = 'script' | 'title' | 'bible' | 'reports';
 
 /** What the editor of the *active* tab can currently do. Published by
  * Editor.tsx; empty when no script is open. */
@@ -253,6 +253,14 @@ export function useCommands(ctx: CommandContext): Command[] {
         run: () => editor?.setView('bible'),
       },
       {
+        id: 'view.reports',
+        label: t.reportsTab,
+        accelerator: 'Mod+Alt+R',
+        group: 'view',
+        enabled: Boolean(editor),
+        run: () => editor?.setView('reports'),
+      },
+      {
         id: 'tab.close',
         label: t.menuCloseTab,
         accelerator: 'Mod+W',
@@ -379,6 +387,7 @@ export function useMenus(commands: Command[], ctx: CommandContext): MenuSpec[] {
           item('view.script', { checked: editor?.view === 'script' }),
           item('view.title', { checked: editor?.view === 'title' }),
           item('view.bible', { checked: editor?.view === 'bible' }),
+          item('view.reports', { checked: editor?.view === 'reports' }),
           { separator: true },
           item('tab.next'),
           item('tab.prev'),
